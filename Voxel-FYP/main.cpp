@@ -9,12 +9,12 @@ int main()
 	GlfwWrapper glfw{};
 
 	std::unique_ptr<Window> window = glfw.CreateWindow(800, 600, "VulkanFYP");
+	Vulkan_Wrapper vulkanWrapper{ window.get(), true };
 
-	int temp;
-	while (true)
+	while (!window->ShouldClose())
 	{
-		std::cin >> temp;
-		if (temp == 5)
-			break;
+		window->PollEvents();
+
+
 	}
 }

@@ -20,6 +20,23 @@ GLFW_Window::~GLFW_Window()
 	}
 }
 
+bool GLFW_Window::ShouldClose() const
+{
+	return glfwWindowShouldClose(m_windowHandle);
+}
+
+void GLFW_Window::PollEvents() const
+{
+	glfwPollEvents();
+}
+
+WindowExtensions GLFW_Window::GetRequiredInstanceExtensions() const
+{
+	WindowExtensions extensions{};
+	extensions.extensions = glfwGetRequiredInstanceExtensions(&extensions.count);
+	return extensions;
+}
+
 void GLFW_Window::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	GLFW_Window* customWindow = reinterpret_cast<GLFW_Window*>(glfwGetWindowUserPointer(window));

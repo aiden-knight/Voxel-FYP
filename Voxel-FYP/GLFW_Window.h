@@ -3,11 +3,15 @@
 
 struct GLFWwindow;
 
-class GLFW_Window : public Window
+class GLFW_Window final : public Window
 {
 public:
 	GLFW_Window(const int width, const int height, const char* title);
 	~GLFW_Window();
+
+	bool ShouldClose() const;
+	void PollEvents() const;
+	WindowExtensions GetRequiredInstanceExtensions() const;
 
 private:
 	GLFWwindow* m_windowHandle;

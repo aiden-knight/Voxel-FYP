@@ -16,6 +16,18 @@
     <Filter Include="External">
       <UniqueIdentifier>{a10c659a-d46d-4250-b07a-f664a62a8dd0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Vulkan">
+      <UniqueIdentifier>{a76633f8-77ee-438d-86a3-d10400a9a051}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GLFW">
+      <UniqueIdentifier>{68e4d12e-782e-4b87-b7f6-680a095d9c74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan">
+      <UniqueIdentifier>{bd954213-a467-4f0e-b22d-4e3b290ee62f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GLFW">
+      <UniqueIdentifier>{66388b95-cdc2-49e7-95b6-8125d04a0c8f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -45,31 +57,49 @@
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp">
       <Filter>External</Filter>
     </ClCompile>
-    <ClCompile Include="Vulkan_Wrapper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GLFW_Wrapper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GLFW_Wrapper.cpp">
+      <Filter>Source Files\GLFW</Filter>
+    </ClCompile>
     <ClCompile Include="GLFW_Window.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\GLFW</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan_Wrapper.cpp">
+      <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan_Instance.cpp">
+      <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan_Debugger.cpp">
+      <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan_PhysicalDevice.cpp">
+      <Filter>Source Files\Vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Vulkan_Wrapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GLFW_Wrapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GLFW_Wrapper.h">
+      <Filter>Header Files\GLFW</Filter>
+    </ClInclude>
     <ClInclude Include="GLFW_Window.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\GLFW</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan_Wrapper.h">
+      <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan_Instance.h">
+      <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan_Debugger.h">
+      <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan_PhysicalDevice.h">
+      <Filter>Header Files\Vulkan</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

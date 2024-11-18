@@ -147,14 +147,20 @@
     <ClCompile Include="..\includes\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\includes\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="Vulkan_Debugger.cpp" />
     <ClCompile Include="GLFW_Window.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Vulkan_Instance.cpp" />
+    <ClCompile Include="Vulkan_PhysicalDevice.cpp" />
     <ClCompile Include="Vulkan_Wrapper.cpp" />
     <ClCompile Include="GLFW_Wrapper.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Vulkan_Debugger.h" />
     <ClInclude Include="GLFW_Window.h" />
+    <ClInclude Include="Vulkan_Instance.h" />
+    <ClInclude Include="Vulkan_PhysicalDevice.h" />
     <ClInclude Include="Vulkan_Wrapper.h" />
     <ClInclude Include="GLFW_Wrapper.h" />
     <ClInclude Include="Window.h" />
