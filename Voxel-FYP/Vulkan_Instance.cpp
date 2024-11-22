@@ -5,19 +5,18 @@
 #include <set>
 #include <exception>
 
-struct Initialisation
+struct Vulkan_Instance::CreateInfo
 {
+	vk::InstanceCreateInfo createInfo;
 	vk::ApplicationInfo appInfo;
 	std::vector<const char*> extensions;
 	std::vector<const char*> validationLayers;
 };
 
-Initialisation* init = nullptr;
-
 Vulkan_Instance::Vulkan_Instance(const Vulkan_Wrapper* owner) :
-	m_instance{ owner->GetContext(), GetCreateInfo(owner) }
+	m_instance{ owner->GetContext(), GetCreateInfo(owner).createInfo }
 {
-	delete init;
+
 }
 
 vk::raii::DebugUtilsMessengerEXT Vulkan_Instance::CreateDebugUtilMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT createInfo) const
@@ -25,11 +24,11 @@ vk::raii::DebugUtilsMessengerEXT Vulkan_Instance::CreateDebugUtilMessengerEXT(vk
 	return m_instance.createDebugUtilsMessengerEXT(createInfo);
 }
 
-vk::InstanceCreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper* owner) const
+Vulkan_Instance::CreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper* owner) const
 {
-	init = new Initialisation();
+	CreateInfo info;
 
-	init->appInfo = vk::ApplicationInfo{
+	info.appInfo = vk::ApplicationInfo{
 		"Voxel FYP",
 		VK_MAKE_VERSION(1,0,0),
 		"No Engine",
@@ -37,24 +36,24 @@ vk::InstanceCreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper* owne
 		VK_API_VERSION_1_0
 	};
 
-	init->extensions = GetRequiredExtensions(owner);
-	if (!CheckExtensionSupport(owner, init->extensions))
+	info.extensions = GetRequiredExtensions(owner);
+	if (!CheckExtensionSupport(owner, info.extensions))
 		throw std::runtime_error("extensions not supported");
 
-	vk::InstanceCreateInfo createInfo{
+	info.createInfo = vk::InstanceCreateInfo{
 		vk::InstanceCreateFlags(),
-		&init->appInfo,
+		&info.appInfo,
 		0, nullptr,
-		static_cast<uint32_t>(init->extensions.size()), init->extensions.data()
+		static_cast<uint32_t>(info.extensions.size()), info.extensions.data()
 	};
 
 	if (owner->IsValidationEnabled())
 	{
-		init->validationLayers = owner->GetValidationLayers();
-		createInfo.enabledLayerCount = static_cast<uint32_t>(init->validationLayers.size());
-		createInfo.ppEnabledLayerNames = init->validationLayers.data();
+		info.validationLayers = owner->GetValidationLayers();
+		info.createInfo.enabledLayerCount = static_cast<uint32_t>(info.validationLayers.size());
+		info.createInfo.ppEnabledLayerNames = info.validationLayers.data();
 	}
-	return createInfo;
+	return info;
 }
 
 std::vector<const char*> Vulkan_Instance::GetRequiredExtensions(const Vulkan_Wrapper* owner) const

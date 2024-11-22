@@ -12,9 +12,11 @@ public:
 
 	vk::raii::DebugUtilsMessengerEXT CreateDebugUtilMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT createInfo) const;
 private:
+	struct CreateInfo;
+
 	vk::raii::Instance m_instance;
 
-	vk::InstanceCreateInfo GetCreateInfo(const Vulkan_Wrapper* owner) const;
+	CreateInfo GetCreateInfo(const Vulkan_Wrapper* owner) const;
 	std::vector<const char*> GetRequiredExtensions(const Vulkan_Wrapper* owner) const;
 	bool CheckExtensionSupport(const Vulkan_Wrapper* owner, const std::vector<const char*>& extensions) const;
 };
