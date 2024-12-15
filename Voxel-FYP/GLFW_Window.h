@@ -1,9 +1,9 @@
 #pragma once
-#include "Window.h"
+#include <vector>
 
 struct GLFWwindow;
 
-class GLFW_Window final : public Window
+class GLFW_Window
 {
 public:
 	GLFW_Window(const int width, const int height, const char* title);
@@ -11,9 +11,12 @@ public:
 
 	bool ShouldClose() const;
 	void PollEvents() const;
-	WindowExtensions GetRequiredInstanceExtensions() const;
+	std::vector<const char*> GetRequiredInstanceExtensions() const;
+
+	GLFWwindow* GetHandle() const { return m_windowHandle; }
 
 private:
+	bool m_resized;
 	GLFWwindow* m_windowHandle;
 
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);

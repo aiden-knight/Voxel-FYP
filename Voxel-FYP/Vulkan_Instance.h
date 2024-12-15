@@ -11,12 +11,13 @@ public:
 	Vulkan_Instance(const Vulkan_Wrapper* owner);
 
 	vk::raii::DebugUtilsMessengerEXT CreateDebugUtilMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT createInfo) const;
-private:
-	struct CreateInfo;
 
+	const vk::raii::Instance& GetHandle() const { return m_instance; }
+private:
 	vk::raii::Instance m_instance;
 
-	CreateInfo GetCreateInfo(const Vulkan_Wrapper* owner) const;
+	struct CreateInfo;
+	const CreateInfo GetCreateInfo(const Vulkan_Wrapper* owner) const;
 	std::vector<const char*> GetRequiredExtensions(const Vulkan_Wrapper* owner) const;
 	bool CheckExtensionSupport(const Vulkan_Wrapper* owner, const std::vector<const char*>& extensions) const;
 };

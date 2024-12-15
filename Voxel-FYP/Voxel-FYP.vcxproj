@@ -150,20 +150,22 @@
     <ClCompile Include="Vulkan_Debugger.cpp" />
     <ClCompile Include="GLFW_Window.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Vulkan_Device.cpp" />
     <ClCompile Include="Vulkan_Instance.cpp" />
-    <ClCompile Include="Vulkan_PhysicalDevice.cpp" />
+    <ClCompile Include="Vulkan_Surface.cpp" />
+    <ClCompile Include="Vulkan_SwapChain.cpp" />
     <ClCompile Include="Vulkan_Wrapper.cpp" />
     <ClCompile Include="GLFW_Wrapper.cpp" />
-    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vulkan_Debugger.h" />
     <ClInclude Include="GLFW_Window.h" />
+    <ClInclude Include="Vulkan_Device.h" />
     <ClInclude Include="Vulkan_Instance.h" />
-    <ClInclude Include="Vulkan_PhysicalDevice.h" />
+    <ClInclude Include="Vulkan_Surface.h" />
+    <ClInclude Include="Vulkan_SwapChain.h" />
     <ClInclude Include="Vulkan_Wrapper.h" />
     <ClInclude Include="GLFW_Wrapper.h" />
-    <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

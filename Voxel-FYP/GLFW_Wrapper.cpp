@@ -14,7 +14,7 @@ GlfwWrapper::~GlfwWrapper()
 	glfwTerminate();
 }
 
-std::unique_ptr<Window> GlfwWrapper::CreateWindow(const int width, const int height, const char* title) const
+std::unique_ptr<GLFW_Window> GlfwWrapper::CreateWindow(const int width, const int height, const char* title) const
 {
-	return std::unique_ptr<Window>(new GLFW_Window(width, height, title));
+	return std::unique_ptr<GLFW_Window>(new GLFW_Window(width, height, title));
 }

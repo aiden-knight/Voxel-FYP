@@ -57,9 +57,6 @@
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp">
       <Filter>External</Filter>
     </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GLFW_Wrapper.cpp">
       <Filter>Source Files\GLFW</Filter>
     </ClCompile>
@@ -75,14 +72,17 @@
     <ClCompile Include="Vulkan_Debugger.cpp">
       <Filter>Source Files\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="Vulkan_PhysicalDevice.cpp">
+    <ClCompile Include="Vulkan_Surface.cpp">
       <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan_Device.cpp">
+      <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Vulkan_SwapChain.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GLFW_Wrapper.h">
       <Filter>Header Files\GLFW</Filter>
     </ClInclude>
@@ -98,8 +98,14 @@
     <ClInclude Include="Vulkan_Debugger.h">
       <Filter>Header Files\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Vulkan_PhysicalDevice.h">
+    <ClInclude Include="Vulkan_Surface.h">
       <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan_Device.h">
+      <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Vulkan_SwapChain.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

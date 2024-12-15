@@ -6,6 +6,7 @@
 GLFW_Window::GLFW_Window(const int width, const int height, const char* title)
 {
 	m_windowHandle = glfwCreateWindow(width, height, title, NULL, NULL);
+	m_resized = false;
 
 	glfwSetWindowUserPointer(m_windowHandle, this);
 	glfwSetFramebufferSizeCallback(m_windowHandle, FramebufferResizeCallback);
@@ -30,11 +31,11 @@ void GLFW_Window::PollEvents() const
 	glfwPollEvents();
 }
 
-WindowExtensions GLFW_Window::GetRequiredInstanceExtensions() const
+std::vector<const char*> GLFW_Window::GetRequiredInstanceExtensions() const
 {
-	WindowExtensions extensions{};
-	extensions.extensions = glfwGetRequiredInstanceExtensions(&extensions.count);
-	return extensions;
+	uint32_t count;
+	const char** extensions = glfwGetRequiredInstanceExtensions(&count);
+	return { extensions, extensions + count };
 }
 
 void GLFW_Window::FramebufferResizeCallback(GLFWwindow* window, int width, int height)

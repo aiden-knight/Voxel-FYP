@@ -1,6 +1,6 @@
 #include "Vulkan_Instance.h"
 #include "Vulkan_Wrapper.h"
-#include "Window.h"
+#include "GLFW_Window.h"
 
 #include <set>
 #include <exception>
@@ -24,7 +24,7 @@ vk::raii::DebugUtilsMessengerEXT Vulkan_Instance::CreateDebugUtilMessengerEXT(vk
 	return m_instance.createDebugUtilsMessengerEXT(createInfo);
 }
 
-Vulkan_Instance::CreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper* owner) const
+const Vulkan_Instance::CreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper* owner) const
 {
 	CreateInfo info;
 
@@ -58,8 +58,7 @@ Vulkan_Instance::CreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper*
 
 std::vector<const char*> Vulkan_Instance::GetRequiredExtensions(const Vulkan_Wrapper* owner) const
 {
-	WindowExtensions windowExtensions = owner->GetWindow()->GetRequiredInstanceExtensions();
-	std::vector<const char*> extensions{ windowExtensions.extensions, windowExtensions.extensions + windowExtensions.count };
+	std::vector<const char*> extensions = owner->GetWindow()->GetRequiredInstanceExtensions();
 
 	if (owner->IsValidationEnabled())
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
