@@ -12,63 +12,58 @@ const std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-struct Vulkan_Device::CreateInfo 
-{
-	float queuePriority;
-	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-	vk::PhysicalDeviceFeatures deviceFeatures;
-	vk::DeviceCreateInfo createInfo;
-};
 
 Vulkan_Device::Vulkan_Device(const std::unique_ptr<Vulkan_Instance>& instance, const std::unique_ptr<Vulkan_Surface>& surface) :
 	m_physicalDevice{ChoosePhysicalDevice(instance, surface)},
-	m_device{m_physicalDevice, GetCreateInfo().createInfo, nullptr}
+	m_device{CreateDevice()}
 {
 
 }
 
 vk::raii::Queue Vulkan_Device::GetQueue(QueueType type) const
 {
-	switch (type)
-	{
+	return m_device.getQueue(GetQueueIndex(type), 0);
+}
+
+uint32_t Vulkan_Device::GetQueueIndex(QueueType type) const 
+{
+	switch (type) {
 	case GRAPHICS:
-		return m_device.getQueue(m_queueFamilies.graphicsFamily.value(), 0);
+		return m_queueFamilies.graphicsFamily.value();
 	case PRESENT:
-		return m_device.getQueue(m_queueFamilies.presentFamily.value(), 0);
+		return m_queueFamilies.presentFamily.value();
 	default:
 		throw std::runtime_error("queue type not supported");
 	}
 }
 
-const Vulkan_Device::CreateInfo Vulkan_Device::GetCreateInfo() const
+vk::raii::Device Vulkan_Device::CreateDevice() const
 {
-	CreateInfo createInfo;
-
 	std::set<uint32_t> uniqueQueueFamilies = { m_queueFamilies.graphicsFamily.value() };
-	createInfo.queuePriority = 1.0f;
+	float queuePriority = 1.0f;
+	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+	vk::PhysicalDeviceFeatures deviceFeatures{};
 
 	// get all device queue create infos
 	for (uint32_t queueFamily : uniqueQueueFamilies)
 	{
-		vk::DeviceQueueCreateInfo queueCreateInfo{
+		queueCreateInfos.emplace_back(vk::DeviceQueueCreateInfo(
 			{}, // flags
 			queueFamily,
 			1, // count
-			&createInfo.queuePriority
-		};
-
-		createInfo.queueCreateInfos.push_back(queueCreateInfo);
+			&queuePriority
+			));
 	}
 	 
-	createInfo.createInfo = { 
+	vk::DeviceCreateInfo createInfo = {
 		{}, // flags
-		static_cast<uint32_t>(createInfo.queueCreateInfos.size()), createInfo.queueCreateInfos.data(),
+		static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(),
 		0, {}, // validation layers
 		static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data(),
-		&createInfo.deviceFeatures
+		&deviceFeatures
 	};
 
-	return createInfo;
+	return m_physicalDevice.createDevice(createInfo);
 }
 
 vk::raii::PhysicalDevice Vulkan_Device::ChoosePhysicalDevice(const std::unique_ptr<Vulkan_Instance>& instance, const std::unique_ptr<Vulkan_Surface>& surface)

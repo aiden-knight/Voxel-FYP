@@ -11,13 +11,14 @@ public:
 
 	bool ShouldClose() const;
 	void PollEvents() const;
+	void WaitEvents() const;
 	void GetFramebufferSize(int* width, int* height);
 	std::vector<const char*> GetRequiredInstanceExtensions() const;
 
 	GLFWwindow* GetHandle() const { return m_windowHandle; }
 
+	bool resized;
 private:
-	bool m_resized;
 	GLFWwindow* m_windowHandle;
 
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);

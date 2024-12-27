@@ -6,6 +6,8 @@
 #include "Vulkan_SwapChain.h"
 #include "Vulkan_RenderPass.h"
 #include "Vulkan_Pipeline.h"
+#include "Vulkan_CommandPool.h"
+#include "Vulkan_Renderer.h"
 #include "GLFW_Window.h"
 
 Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
@@ -25,6 +27,9 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_renderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat()));
 	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_renderPass));
 
+	m_swapChain->CreateFramebuffers(m_device, m_renderPass);
+	m_graphicsPool.reset(new Vulkan_CommandPool(m_device, GRAPHICS));
+	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_swapChain, m_pipeline, m_graphicsPool));
 }
 
 Vulkan_Wrapper::~Vulkan_Wrapper()
@@ -38,4 +43,20 @@ std::vector<const char*> Vulkan_Wrapper::GetValidationLayers() const
 	};
 
 	return validationLayers;
+}
+
+void Vulkan_Wrapper::RecreateSwapChain() 
+{
+	int width = 0, height = 0;
+	m_window->GetFramebufferSize(&width, &height);
+	while (width == 0 || height == 0) {
+		m_window->GetFramebufferSize(&width, &height);
+		m_window->WaitEvents();
+	}
+
+	m_device->GetHandle().waitIdle();
+
+	m_swapChain.reset(new Vulkan_SwapChain(m_device, m_surface, { static_cast<uint32_t>(width), static_cast<uint32_t>(height) }, m_swapChain.get()));
+
+	m_swapChain->CreateFramebuffers(m_device, m_renderPass);
 }

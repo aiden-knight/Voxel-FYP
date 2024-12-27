@@ -147,12 +147,14 @@
     <ClCompile Include="..\includes\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\includes\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="Vulkan_CommandPool.cpp" />
     <ClCompile Include="Vulkan_Debugger.cpp" />
     <ClCompile Include="GLFW_Window.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Vulkan_Device.cpp" />
     <ClCompile Include="Vulkan_Instance.cpp" />
     <ClCompile Include="Vulkan_Pipeline.cpp" />
+    <ClCompile Include="Vulkan_Renderer.cpp" />
     <ClCompile Include="Vulkan_RenderPass.cpp" />
     <ClCompile Include="Vulkan_Surface.cpp" />
     <ClCompile Include="Vulkan_SwapChain.cpp" />
@@ -160,11 +162,14 @@
     <ClCompile Include="GLFW_Wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Vulkan_FWD.h" />
+    <ClInclude Include="Vulkan_CommandPool.h" />
     <ClInclude Include="Vulkan_Debugger.h" />
     <ClInclude Include="GLFW_Window.h" />
     <ClInclude Include="Vulkan_Device.h" />
     <ClInclude Include="Vulkan_Instance.h" />
     <ClInclude Include="Vulkan_Pipeline.h" />
+    <ClInclude Include="Vulkan_Renderer.h" />
     <ClInclude Include="Vulkan_RenderPass.h" />
     <ClInclude Include="Vulkan_Surface.h" />
     <ClInclude Include="Vulkan_SwapChain.h" />

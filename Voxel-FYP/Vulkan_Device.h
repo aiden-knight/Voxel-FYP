@@ -26,6 +26,8 @@ public:
 	Vulkan_Device(const std::unique_ptr<Vulkan_Instance>& instance, const std::unique_ptr<Vulkan_Surface>& surface);
 
 	vk::raii::Queue GetQueue(QueueType type) const;
+	uint32_t GetQueueIndex(QueueType type) const;
+
 	const vk::raii::Device& GetHandle() const { return m_device; }
 
 	const SwapChainSupportDetails GetSwapChainSupportDetails() const { return m_swapChainSupportDetails; }
@@ -47,8 +49,7 @@ private:
 	vk::raii::PhysicalDevice m_physicalDevice;
 	vk::raii::Device m_device;
 
-	struct CreateInfo;
-	const CreateInfo GetCreateInfo() const;
+	vk::raii::Device CreateDevice() const;
 
 	vk::raii::PhysicalDevice ChoosePhysicalDevice(const std::unique_ptr<Vulkan_Instance>& instance, const std::unique_ptr<Vulkan_Surface>& surface);
 };

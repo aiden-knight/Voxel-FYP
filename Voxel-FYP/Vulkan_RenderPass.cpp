@@ -8,21 +8,28 @@ Vulkan_RenderPass::Vulkan_RenderPass(const std::unique_ptr<Vulkan_Device>& devic
 }
 
 vk::raii::RenderPass Vulkan_RenderPass::CreateRenderPass(const std::unique_ptr<Vulkan_Device>& device, const vk::Format swapChainImageFormat) {
-	vk::AttachmentDescription colourAttachment = {
+	std::array<vk::AttachmentDescription, 1> colourAttachment = { {{
 		{}, swapChainImageFormat, vk::SampleCountFlagBits::e1,
 		vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
 		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
 		vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR
-	};
+	}} };
 
-	vk::AttachmentReference colourAttachmentRef = { 0, vk::ImageLayout::eColorAttachmentOptimal	};
+	std::array<vk::AttachmentReference, 1> colourAttachmentRef{ {{ 0, vk::ImageLayout::eColorAttachmentOptimal }} };
 
-	vk::SubpassDescription subpass = { {}, vk::PipelineBindPoint::eGraphics, 0, nullptr, 1, &colourAttachmentRef };
+	std::array<vk::SubpassDescription, 1> subpass{ { { {}, vk::PipelineBindPoint::eGraphics, nullptr, colourAttachmentRef }} };
+
+	std::array<vk::SubpassDependency, 1> dependencies{ {{
+		vk::SubpassExternal,								0, // source and dest subpass
+		vk::PipelineStageFlagBits::eColorAttachmentOutput,	vk::PipelineStageFlagBits::eColorAttachmentOutput,	// stages
+		vk::AccessFlagBits::eNone,							vk::AccessFlagBits::eColorAttachmentWrite			// access requirements
+	}} };
 
 	vk::RenderPassCreateInfo createInfo = {
 		{},
-		1, &colourAttachment,
-		1, &subpass
+		colourAttachment,
+		subpass,
+		dependencies
 	};
 
 	return device->GetHandle().createRenderPass(createInfo);

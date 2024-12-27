@@ -6,22 +6,31 @@
 
 class Vulkan_Device;
 class Vulkan_Surface;
+class Vulkan_RenderPass;
 
 class Vulkan_SwapChain
 {
 public:
 	Vulkan_SwapChain(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain);
 
-    const vk::Format GetImageFormat() const { return m_imageFormat; }
-private:
-	vk::raii::SwapchainKHR m_swapChain;
-    std::vector<vk::Image> m_images;
-    std::vector<vk::ImageView> m_imageViews;
-    vk::Format m_imageFormat;
-    vk::Extent2D m_imageExtent;
+    const vk::raii::SwapchainKHR& GetHandle() const { return m_swapChain; }
 
-	struct CreateInfo;
-	CreateInfo GetCreateInfo(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain);
+    const vk::Format GetImageFormat() const { return m_imageFormat; }
+    const vk::Extent2D GetImageExtent() const { return m_imageExtent; }
+
+    const vk::raii::Framebuffer& GetFramebuffer(uint32_t index) const { return m_frameBuffers[index]; }
+    void CreateFramebuffers(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass);
+private:
+    const vk::Extent2D m_imageExtent;
+    const vk::Format m_imageFormat;
+	vk::raii::SwapchainKHR m_swapChain;
+
+    std::vector<vk::Image> m_images;
+    std::vector<vk::raii::ImageView> m_imageViews;
+    std::vector<vk::raii::Framebuffer> m_frameBuffers;
+
+
+    vk::SwapchainCreateInfoKHR GetCreateInfo(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, const Vulkan_SwapChain* oldSwapchain) const;
 
     /// <summary>
     /// Chooses the best image format for the swapchain out of those available

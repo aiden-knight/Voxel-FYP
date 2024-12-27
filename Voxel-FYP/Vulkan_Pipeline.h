@@ -11,6 +11,7 @@ class Vulkan_Pipeline
 public:
 	Vulkan_Pipeline(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass);
 
+	const vk::raii::Pipeline& GetHandle() const { return m_pipeline; }
 private:
 	vk::raii::PipelineLayout m_pipelineLayout;
 	vk::raii::Pipeline m_pipeline;
