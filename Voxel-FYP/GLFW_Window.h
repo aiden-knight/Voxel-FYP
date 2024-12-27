@@ -11,6 +11,7 @@ public:
 
 	bool ShouldClose() const;
 	void PollEvents() const;
+	void GetFramebufferSize(int* width, int* height);
 	std::vector<const char*> GetRequiredInstanceExtensions() const;
 
 	GLFWwindow* GetHandle() const { return m_windowHandle; }

@@ -2,6 +2,7 @@
 #define WIN32
 #include <vulkan/vulkan_raii.hpp>
 #include <memory>
+#include <vector>
 
 class Vulkan_Device;
 class Vulkan_Surface;
@@ -11,8 +12,13 @@ class Vulkan_SwapChain
 public:
 	Vulkan_SwapChain(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain);
 
+    const vk::Format GetImageFormat() const { return m_imageFormat; }
 private:
 	vk::raii::SwapchainKHR m_swapChain;
+    std::vector<vk::Image> m_images;
+    std::vector<vk::ImageView> m_imageViews;
+    vk::Format m_imageFormat;
+    vk::Extent2D m_imageExtent;
 
 	struct CreateInfo;
 	CreateInfo GetCreateInfo(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain);

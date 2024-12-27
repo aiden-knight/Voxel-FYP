@@ -31,6 +31,11 @@ void GLFW_Window::PollEvents() const
 	glfwPollEvents();
 }
 
+void GLFW_Window::GetFramebufferSize(int* width, int* height) 
+{
+	glfwGetFramebufferSize(m_windowHandle, width, height);
+}
+
 std::vector<const char*> GLFW_Window::GetRequiredInstanceExtensions() const
 {
 	uint32_t count;

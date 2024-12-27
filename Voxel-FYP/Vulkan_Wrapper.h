@@ -9,6 +9,9 @@ class Vulkan_Instance;
 class Vulkan_Debugger;
 class Vulkan_Device;
 class Vulkan_Surface;
+class Vulkan_SwapChain;
+class Vulkan_RenderPass;
+class Vulkan_Pipeline;
 
 class Vulkan_Wrapper
 {
@@ -29,6 +32,9 @@ private:
 	std::unique_ptr<Vulkan_Debugger> m_debugMessenger;
 	std::unique_ptr<Vulkan_Surface> m_surface;
 	std::unique_ptr<Vulkan_Device> m_device;
+	std::unique_ptr<Vulkan_SwapChain> m_swapChain;
+	std::unique_ptr<Vulkan_RenderPass> m_renderPass;
+	std::unique_ptr<Vulkan_Pipeline> m_pipeline;
 
 	GLFW_Window* m_window;
 };

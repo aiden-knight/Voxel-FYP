@@ -13,7 +13,25 @@ Vulkan_SwapChain::Vulkan_SwapChain(const std::unique_ptr<Vulkan_Device>& device,
 	m_swapChain{ device->GetHandle(), GetCreateInfo(device, surface, surfaceExtent, oldSwapchain).createInfo }
 
 {
+	m_images = m_swapChain.getImages();
 
+	m_imageViews.reserve(m_images.size());
+	for (const auto& image : m_images) 
+	{
+		vk::ImageViewCreateInfo createInfo{
+			{}, // flags
+			image,
+			vk::ImageViewType::e2D,
+			m_imageFormat,
+			{}, // component mapping
+			vk::ImageSubresourceRange(
+				vk::ImageAspectFlagBits::eColor,
+				0, 1, 0, 1
+			)
+		};
+
+		m_imageViews.emplace_back(device->GetHandle().createImageView(createInfo));
+	}
 }
 
 Vulkan_SwapChain::CreateInfo Vulkan_SwapChain::GetCreateInfo(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain)
@@ -23,7 +41,8 @@ Vulkan_SwapChain::CreateInfo Vulkan_SwapChain::GetCreateInfo(const std::unique_p
 	const SwapChainSupportDetails supportDetails = device->GetSwapChainSupportDetails();
 	vk::SurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.formats);
 	vk::PresentModeKHR presentMode = ChooseSwapPresentMode(supportDetails.presentModes);
-	vk::Extent2D extent = ChooseSwapExtent(supportDetails.capabilities, surfaceExtent);
+	m_imageFormat = surfaceFormat.format;
+	m_imageExtent = ChooseSwapExtent(supportDetails.capabilities, surfaceExtent);
 
 	uint32_t imageCount = supportDetails.capabilities.minImageCount + 1;
 	if (supportDetails.capabilities.maxImageCount > 0 && imageCount > supportDetails.capabilities.maxImageCount) {
@@ -36,7 +55,7 @@ Vulkan_SwapChain::CreateInfo Vulkan_SwapChain::GetCreateInfo(const std::unique_p
 		imageCount,
 		surfaceFormat.format,
 		surfaceFormat.colorSpace,
-		extent,
+		m_imageExtent,
 		1,
 		vk::ImageUsageFlagBits::eColorAttachment,
 		vk::SharingMode::eExclusive, 0, nullptr,
