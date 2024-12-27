@@ -147,6 +147,7 @@
     <ClCompile Include="..\includes\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\includes\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="Vulkan_Buffer.cpp" />
     <ClCompile Include="Vulkan_CommandPool.cpp" />
     <ClCompile Include="Vulkan_Debugger.cpp" />
     <ClCompile Include="GLFW_Window.cpp" />
@@ -162,6 +163,8 @@
     <ClCompile Include="GLFW_Wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Structures.h" />
+    <ClInclude Include="Vulkan_Buffer.h" />
     <ClInclude Include="Vulkan_FWD.h" />
     <ClInclude Include="Vulkan_CommandPool.h" />
     <ClInclude Include="Vulkan_Debugger.h" />

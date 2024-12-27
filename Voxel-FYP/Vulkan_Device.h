@@ -26,6 +26,8 @@ public:
 	vk::raii::Queue GetQueue(QueueType type) const;
 	uint32_t GetQueueIndex(QueueType type) const;
 
+	uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const;
+
 	const vk::raii::Device& GetHandle() const { return m_device; }
 
 	const SwapChainSupportDetails GetSwapChainSupportDetails() const { return m_swapChainSupportDetails; }

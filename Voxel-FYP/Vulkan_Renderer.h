@@ -32,5 +32,8 @@ private:
 	uint32_t currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
+	std::unique_ptr<Vulkan_Buffer> m_vertexBuffer;
+
 	void RecordCommandBuffer(uint32_t imageIndex);
+	void CreateVertexBuffer(DevicePtr device);
 };

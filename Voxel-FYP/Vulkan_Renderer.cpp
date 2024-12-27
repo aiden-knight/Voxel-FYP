@@ -5,7 +5,15 @@
 #include "Vulkan_Pipeline.h"
 #include "Vulkan_Device.h"
 #include "Vulkan_Wrapper.h"
+#include "Vulkan_Buffer.h"
 #include "GLFW_Window.h"
+#include "Structures.h"
+
+const std::vector<Vertex> g_vertices = {
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
 
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool) :
 	m_owner{owner},
@@ -26,6 +34,8 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		m_renderFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
 	}
+
+	CreateVertexBuffer();
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -110,8 +120,28 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	m_commandBuffers[currentFrame].setViewport(0, viewports);
 	m_commandBuffers[currentFrame].setScissor(0, scissors);
 
-	m_commandBuffers[currentFrame].draw(3, 1, 0, 0);
+	std::array<vk::Buffer, 1> vertexBuffers{m_vertexBuffer->GetHandle()};
+	std::array<vk::DeviceSize, 1> offsets{ 0 };
+	m_commandBuffers[currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
+
+	m_commandBuffers[currentFrame].draw(static_cast<uint32_t>(g_vertices.size()), 1, 0, 0);
 
 	m_commandBuffers[currentFrame].endRenderPass();
 	m_commandBuffers[currentFrame].end();
+}
+
+void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device)
+{
+	size_t bufferSize = sizeof(Vertex) * g_vertices.size();
+
+	Vulkan_Buffer stagingBuffer{ device, bufferSize, 
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+
+	stagingBuffer.FillBuffer(g_vertices.data());
+
+	m_vertexBuffer.reset(new Vulkan_Buffer(device, bufferSize,
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal));
+	// TRANSFER STAGING BUFFER MEMORY INTO VERTEX BUFFER
 }

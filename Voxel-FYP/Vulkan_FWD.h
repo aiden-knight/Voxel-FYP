@@ -10,6 +10,7 @@ class Vulkan_Renderer;
 class Vulkan_RenderPass;
 class Vulkan_Surface;
 class Vulkan_SwapChain;
+class Vulkan_Buffer;
 
 using CommandPoolPtr = const std::unique_ptr<Vulkan_CommandPool>&;
 using DebuggerPtr = const std::unique_ptr<Vulkan_Debugger>&;

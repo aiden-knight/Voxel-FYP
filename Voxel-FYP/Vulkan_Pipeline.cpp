@@ -1,6 +1,7 @@
 #include "Vulkan_Pipeline.h"
 #include "Vulkan_Device.h"
 #include "Vulkan_RenderPass.h"
+#include "Structures.h"
 #include <fstream>
 
 Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass) :
@@ -29,7 +30,11 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
         }
     } };
 
-    vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, 0, nullptr, 0, nullptr };
+    auto bindingDesc = Vertex::GetBindingDescription();
+    auto attributeDesc = Vertex::GetAttributeDescriptions();
+
+    vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, bindingDesc, attributeDesc};
+
     vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::eTriangleList, vk::False };
     vk::PipelineViewportStateCreateInfo viewportState = { {}, 1, nullptr, 1, nullptr };
     vk::PipelineMultisampleStateCreateInfo multisampler = { {}, vk::SampleCountFlagBits::e1, vk::False };
