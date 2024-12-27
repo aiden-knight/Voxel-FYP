@@ -1,7 +1,7 @@
 #include "Vulkan_Debugger.h"
 #include "Vulkan_Instance.h"
 
-Vulkan_Debugger::Vulkan_Debugger(const std::unique_ptr<Vulkan_Instance>& instance) :
+Vulkan_Debugger::Vulkan_Debugger(InstancePtr instance) :
 	m_debugMessenger{ instance->CreateDebugUtilMessengerEXT(GetCreateInfo()) }
 {
 

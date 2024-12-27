@@ -1,15 +1,14 @@
 #pragma once
 #define WIN32
 #include <vulkan/vulkan_raii.hpp>
-#include <memory>
 #include <iostream>
 
-class Vulkan_Instance;
+#include "Vulkan_FWD.h"
 
 class Vulkan_Debugger
 {
 public:
-    Vulkan_Debugger(const std::unique_ptr<Vulkan_Instance>& instance);
+    Vulkan_Debugger(InstancePtr instance);
 
 private:
     vk::raii::DebugUtilsMessengerEXT m_debugMessenger;

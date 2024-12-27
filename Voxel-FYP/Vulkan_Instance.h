@@ -16,8 +16,7 @@ public:
 private:
 	vk::raii::Instance m_instance;
 
-	struct CreateInfo;
-	const CreateInfo GetCreateInfo(const Vulkan_Wrapper* owner) const;
+	vk::raii::Instance CreateInstance(const Vulkan_Wrapper* owner) const;
 	std::vector<const char*> GetRequiredExtensions(const Vulkan_Wrapper* owner) const;
 	bool CheckExtensionSupport(const Vulkan_Wrapper* owner, const std::vector<const char*>& extensions) const;
 };

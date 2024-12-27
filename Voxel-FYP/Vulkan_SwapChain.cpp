@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-Vulkan_SwapChain::Vulkan_SwapChain(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain) :
+Vulkan_SwapChain::Vulkan_SwapChain(DevicePtr device, SurfacePtr surface, vk::Extent2D surfaceExtent, const Vulkan_SwapChain* oldSwapchain) :
 	m_imageExtent{ ChooseSwapExtent(device->GetSwapChainSupportDetails().capabilities, surfaceExtent) },
 	m_imageFormat{ ChooseSwapSurfaceFormat(device->GetSwapChainSupportDetails().formats).format },
 	m_swapChain{ device->GetHandle(), GetCreateInfo(device, surface, oldSwapchain) }
@@ -31,7 +31,7 @@ Vulkan_SwapChain::Vulkan_SwapChain(const std::unique_ptr<Vulkan_Device>& device,
 	}
 }
 
-void Vulkan_SwapChain::CreateFramebuffers(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass)
+void Vulkan_SwapChain::CreateFramebuffers(DevicePtr device, RenderPassPtr renderPass)
 {
 	m_frameBuffers.reserve(m_imageViews.size());
 
@@ -50,7 +50,7 @@ void Vulkan_SwapChain::CreateFramebuffers(const std::unique_ptr<Vulkan_Device>& 
 	}
 }
 
-vk::SwapchainCreateInfoKHR Vulkan_SwapChain::GetCreateInfo(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_Surface>& surface, const Vulkan_SwapChain* oldSwapchain) const
+vk::SwapchainCreateInfoKHR Vulkan_SwapChain::GetCreateInfo(DevicePtr device, SurfacePtr surface, const Vulkan_SwapChain* oldSwapchain) const
 {
 	const SwapChainSupportDetails supportDetails = device->GetSwapChainSupportDetails();
 	vk::SurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.formats);

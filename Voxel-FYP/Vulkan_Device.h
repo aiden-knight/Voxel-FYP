@@ -1,11 +1,9 @@
 #pragma once
 #define WIN32
 #include <vulkan/vulkan_raii.hpp>
-#include <memory>
 #include <optional> 
 
-class Vulkan_Instance;
-class Vulkan_Surface;
+#include "Vulkan_FWD.h"
 
 enum QueueType
 {
@@ -23,7 +21,7 @@ struct SwapChainSupportDetails
 class Vulkan_Device
 {
 public:
-	Vulkan_Device(const std::unique_ptr<Vulkan_Instance>& instance, const std::unique_ptr<Vulkan_Surface>& surface);
+	Vulkan_Device(InstancePtr instance, SurfacePtr surface);
 
 	vk::raii::Queue GetQueue(QueueType type) const;
 	uint32_t GetQueueIndex(QueueType type) const;

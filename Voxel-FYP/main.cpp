@@ -15,7 +15,8 @@ int main()
 
 		RendererPtr renderer = vulkanWrapper.GetRenderer();
 
-		while (!window->ShouldClose()) {
+		while (!window->ShouldClose()) 
+		{
 			window->PollEvents();
 
 			renderer->DrawFrame();

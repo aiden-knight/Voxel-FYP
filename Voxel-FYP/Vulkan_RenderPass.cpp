@@ -1,13 +1,13 @@
 #include "Vulkan_RenderPass.h"
 #include "Vulkan_Device.h"
 
-Vulkan_RenderPass::Vulkan_RenderPass(const std::unique_ptr<Vulkan_Device>& device, const vk::Format swapChainImageFormat) :
+Vulkan_RenderPass::Vulkan_RenderPass(DevicePtr device, const vk::Format swapChainImageFormat) :
 	m_renderPass{ CreateRenderPass(device, swapChainImageFormat) }
 {
 
 }
 
-vk::raii::RenderPass Vulkan_RenderPass::CreateRenderPass(const std::unique_ptr<Vulkan_Device>& device, const vk::Format swapChainImageFormat) {
+vk::raii::RenderPass Vulkan_RenderPass::CreateRenderPass(DevicePtr device, const vk::Format swapChainImageFormat) {
 	std::array<vk::AttachmentDescription, 1> colourAttachment = { {{
 		{}, swapChainImageFormat, vk::SampleCountFlagBits::e1,
 		vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,

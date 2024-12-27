@@ -1,6 +1,6 @@
 #include "Vulkan_CommandPool.h"
 
-Vulkan_CommandPool::Vulkan_CommandPool(const std::unique_ptr<Vulkan_Device>& device, QueueType poolType) :
+Vulkan_CommandPool::Vulkan_CommandPool(DevicePtr device, QueueType poolType) :
 	m_poolType{ poolType },
 	m_deviceOwnerRef{device},
 	m_commandPool{CreateCommandPool()}

@@ -3,14 +3,14 @@
 #include "Vulkan_RenderPass.h"
 #include <fstream>
 
-Vulkan_Pipeline::Vulkan_Pipeline(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass) :
+Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass) :
     m_pipelineLayout{device->GetHandle(), vk::PipelineLayoutCreateInfo()},
 	m_pipeline{ CreateGraphicsPipeline(device, renderPass)}
 {
 
 }
 
-vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass) {
+vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, RenderPassPtr renderPass) {
     auto vertShader = CreateShaderModule(device, "shaders/vert.spv");
     auto fragShader = CreateShaderModule(device, "shaders/frag.spv");
 
@@ -72,7 +72,7 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(const std::unique_ptr
     return device->GetHandle().createGraphicsPipeline(nullptr, createInfo);
 }
 
-vk::raii::ShaderModule Vulkan_Pipeline::CreateShaderModule(const std::unique_ptr<Vulkan_Device>& device, const std::string& fileName) {
+vk::raii::ShaderModule Vulkan_Pipeline::CreateShaderModule(DevicePtr device, const std::string& fileName) {
     auto shaderCode = ReadFile(fileName);
 
     vk::ShaderModuleCreateInfo createInfo{

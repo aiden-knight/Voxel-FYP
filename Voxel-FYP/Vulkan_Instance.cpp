@@ -5,16 +5,8 @@
 #include <set>
 #include <exception>
 
-struct Vulkan_Instance::CreateInfo
-{
-	vk::InstanceCreateInfo createInfo;
-	vk::ApplicationInfo appInfo;
-	std::vector<const char*> extensions;
-	std::vector<const char*> validationLayers;
-};
-
 Vulkan_Instance::Vulkan_Instance(const Vulkan_Wrapper* owner) :
-	m_instance{ owner->GetContext(), GetCreateInfo(owner).createInfo }
+	m_instance{ CreateInstance(owner) }
 {
 
 }
@@ -24,11 +16,9 @@ vk::raii::DebugUtilsMessengerEXT Vulkan_Instance::CreateDebugUtilMessengerEXT(vk
 	return m_instance.createDebugUtilsMessengerEXT(createInfo);
 }
 
-const Vulkan_Instance::CreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wrapper* owner) const
+vk::raii::Instance Vulkan_Instance::CreateInstance(const Vulkan_Wrapper* owner) const
 {
-	CreateInfo info;
-
-	info.appInfo = vk::ApplicationInfo{
+	vk::ApplicationInfo appInfo {
 		"Voxel FYP",
 		VK_MAKE_VERSION(1,0,0),
 		"No Engine",
@@ -36,24 +26,23 @@ const Vulkan_Instance::CreateInfo Vulkan_Instance::GetCreateInfo(const Vulkan_Wr
 		VK_API_VERSION_1_0
 	};
 
-	info.extensions = GetRequiredExtensions(owner);
-	if (!CheckExtensionSupport(owner, info.extensions))
+	std::vector<const char*> extensions = GetRequiredExtensions(owner);
+	if (!CheckExtensionSupport(owner, extensions))
 		throw std::runtime_error("extensions not supported");
 
-	info.createInfo = vk::InstanceCreateInfo{
-		vk::InstanceCreateFlags(),
-		&info.appInfo,
-		0, nullptr,
-		static_cast<uint32_t>(info.extensions.size()), info.extensions.data()
-	};
-
-	if (owner->IsValidationEnabled())
-	{
-		info.validationLayers = owner->GetValidationLayers();
-		info.createInfo.enabledLayerCount = static_cast<uint32_t>(info.validationLayers.size());
-		info.createInfo.ppEnabledLayerNames = info.validationLayers.data();
+	std::vector<const char*> validationLayers;
+	if (owner->IsValidationEnabled()) {
+		validationLayers = owner->GetValidationLayers();
 	}
-	return info;
+
+	vk::InstanceCreateInfo createInfo{
+		{}, // flags
+		&appInfo,
+		validationLayers,
+		extensions
+	};
+	
+	return owner->GetContext().createInstance(createInfo);
 }
 
 std::vector<const char*> Vulkan_Instance::GetRequiredExtensions(const Vulkan_Wrapper* owner) const

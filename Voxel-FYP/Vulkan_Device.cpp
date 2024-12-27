@@ -13,7 +13,7 @@ const std::vector<const char*> deviceExtensions = {
 };
 
 
-Vulkan_Device::Vulkan_Device(const std::unique_ptr<Vulkan_Instance>& instance, const std::unique_ptr<Vulkan_Surface>& surface) :
+Vulkan_Device::Vulkan_Device(InstancePtr instance, SurfacePtr surface) :
 	m_physicalDevice{ChoosePhysicalDevice(instance, surface)},
 	m_device{CreateDevice()}
 {

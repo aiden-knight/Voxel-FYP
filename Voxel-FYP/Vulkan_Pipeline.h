@@ -1,24 +1,22 @@
 #pragma once
 #define WIN32
 #include <vulkan/vulkan_raii.hpp>
-#include <memory>
 
-class Vulkan_Device;
-class Vulkan_RenderPass;
+#include "Vulkan_FWD.h"
 
 class Vulkan_Pipeline 
 {
 public:
-	Vulkan_Pipeline(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass);
+	Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass);
 
 	const vk::raii::Pipeline& GetHandle() const { return m_pipeline; }
 private:
 	vk::raii::PipelineLayout m_pipelineLayout;
 	vk::raii::Pipeline m_pipeline;
 
-	vk::raii::Pipeline CreateGraphicsPipeline(const std::unique_ptr<Vulkan_Device>& device, const std::unique_ptr<Vulkan_RenderPass>& renderPass);
+	vk::raii::Pipeline CreateGraphicsPipeline(DevicePtr device, RenderPassPtr renderPass);
 
-	vk::raii::ShaderModule CreateShaderModule(const std::unique_ptr<Vulkan_Device>& device, const std::string& fileName);
+	vk::raii::ShaderModule CreateShaderModule(DevicePtr device, const std::string& fileName);
 
 	static std::vector<char> ReadFile(const std::string& fileName);
 };
