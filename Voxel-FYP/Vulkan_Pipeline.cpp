@@ -12,8 +12,8 @@ Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass) :
 }
 
 vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, RenderPassPtr renderPass) {
-    auto vertShader = CreateShaderModule(device, "shaders/vert.spv");
-    auto fragShader = CreateShaderModule(device, "shaders/frag.spv");
+    auto vertShader = CreateShaderModule(device, "shaders/shader.vert.spv");
+    auto fragShader = CreateShaderModule(device, "shaders/shader.frag.spv");
 
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages = { {
         {

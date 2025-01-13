@@ -33,7 +33,9 @@ private:
 	vk::ClearValue m_clearColour;
 
 	std::unique_ptr<Vulkan_Buffer> m_vertexBuffer;
+	std::unique_ptr<Vulkan_Buffer> m_indexBuffer;
 
 	void RecordCommandBuffer(uint32_t imageIndex);
 	void CreateVertexBuffer(DevicePtr device, CommandPoolPtr transferPool);
+	void CreateIndexBuffer(DevicePtr device, CommandPoolPtr transferPool);
 };

@@ -10,9 +10,14 @@
 #include "Structures.h"
 
 const std::vector<Vertex> g_vertices = {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
 	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> g_indices = {
+	0, 1, 2, 2, 3, 0
 };
 
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool) :
@@ -36,6 +41,7 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 	}
 
 	CreateVertexBuffer(device, graphicsPool);
+	CreateIndexBuffer(device, graphicsPool);
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -122,8 +128,9 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	std::array<vk::Buffer, 1> vertexBuffers{m_vertexBuffer->GetHandle()};
 	std::array<vk::DeviceSize, 1> offsets{ 0 };
 	m_commandBuffers[currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
+	m_commandBuffers[currentFrame].bindIndexBuffer(m_indexBuffer->GetHandle(), 0, vk::IndexType::eUint16);
 
-	m_commandBuffers[currentFrame].draw(static_cast<uint32_t>(g_vertices.size()), 1, 0, 0);
+	m_commandBuffers[currentFrame].drawIndexed(static_cast<uint32_t>(g_indices.size()), 1, 0, 0, 0);
 
 	m_commandBuffers[currentFrame].endRenderPass();
 	m_commandBuffers[currentFrame].end();
@@ -144,4 +151,21 @@ void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device, CommandPoolPtr transf
 		vk::MemoryPropertyFlagBits::eDeviceLocal));
 	// TRANSFER STAGING BUFFER MEMORY INTO VERTEX BUFFER
 	m_vertexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
+}
+
+void Vulkan_Renderer::CreateIndexBuffer(DevicePtr device, CommandPoolPtr transferPool)
+{
+	vk::DeviceSize bufferSize = sizeof(uint16_t) * g_indices.size();
+
+	Vulkan_Buffer stagingBuffer{ device, bufferSize,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+
+	stagingBuffer.FillBuffer(g_indices.data());
+
+	m_indexBuffer.reset(new Vulkan_Buffer(device, bufferSize,
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal));
+	// TRANSFER STAGING BUFFER MEMORY INTO VERTEX BUFFER
+	m_indexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
 }
