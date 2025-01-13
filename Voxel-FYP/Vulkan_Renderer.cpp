@@ -11,9 +11,9 @@
 
 const std::vector<Vertex> g_vertices = {
 	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> g_indices = {
@@ -149,7 +149,7 @@ void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device, CommandPoolPtr transf
 	m_vertexBuffer.reset(new Vulkan_Buffer(device, bufferSize,
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
 		vk::MemoryPropertyFlagBits::eDeviceLocal));
-	// TRANSFER STAGING BUFFER MEMORY INTO VERTEX BUFFER
+
 	m_vertexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
 }
 
@@ -166,6 +166,6 @@ void Vulkan_Renderer::CreateIndexBuffer(DevicePtr device, CommandPoolPtr transfe
 	m_indexBuffer.reset(new Vulkan_Buffer(device, bufferSize,
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 		vk::MemoryPropertyFlagBits::eDeviceLocal));
-	// TRANSFER STAGING BUFFER MEMORY INTO VERTEX BUFFER
+
 	m_indexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
 }
