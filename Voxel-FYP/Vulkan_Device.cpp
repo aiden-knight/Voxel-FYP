@@ -50,12 +50,18 @@ uint32_t Vulkan_Device::FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFl
 	throw std::runtime_error("failed to find suitable memory type");
 }
 
+void Vulkan_Device::ResetSwapChainSupportDetails(SurfacePtr surface)
+{
+	m_swapChainSupportDetails.capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(surface->GetHandle());
+}
+
 vk::raii::Device Vulkan_Device::CreateDevice() const
 {
 	std::set<uint32_t> uniqueQueueFamilies = { m_queueFamilies.graphicsFamily.value() };
 	float queuePriority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 	vk::PhysicalDeviceFeatures deviceFeatures{};
+	deviceFeatures.geometryShader = vk::True;
 
 	// get all device queue create infos
 	for (uint32_t queueFamily : uniqueQueueFamilies)

@@ -10,14 +10,35 @@
 #include "Structures.h"
 
 const std::vector<Vertex> g_vertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	{36},
+	{40},
+	{52},
+	{56},
+	{68},
+	{72},
+	{106},
+	{113},
+	{120},
+	{121},
+	{130},
+	{131},
+	{132},
+	{133},
+	{134},
+	{135},
+	{136},
+	{138},
+	{150},
+	{155},
+	{167},
+	{171},
+	{184},
+	{185},
+	{186}
 };
 
 const std::vector<uint16_t> g_indices = {
-	0, 1, 2, 2, 3, 0
+	
 };
 
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool) :
@@ -130,7 +151,9 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	m_commandBuffers[currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
 	m_commandBuffers[currentFrame].bindIndexBuffer(m_indexBuffer->GetHandle(), 0, vk::IndexType::eUint16);
 
-	m_commandBuffers[currentFrame].drawIndexed(static_cast<uint32_t>(g_indices.size()), 1, 0, 0, 0);
+	
+	//m_commandBuffers[currentFrame].drawIndexed(static_cast<uint32_t>(g_indices.size()), 1, 0, 0, 0);
+	m_commandBuffers[currentFrame].draw(static_cast<uint32_t>(g_vertices.size()), 1, 0, 0);
 
 	m_commandBuffers[currentFrame].endRenderPass();
 	m_commandBuffers[currentFrame].end();

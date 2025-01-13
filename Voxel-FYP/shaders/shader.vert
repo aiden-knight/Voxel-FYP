@@ -1,15 +1,17 @@
 #version 450
 
-layout(location = 0) in uint inPosition;
+layout(location = 0) in uint position;
 
-layout(location = 0) out vec3 fragColour;
-
-vec2 offset = vec2(1.0/16.0, 1.0/12.0);
+uint width = 16;
+uint height = 12;
+vec2 offset = vec2(2.0 / width, 2.0 / height);
 
 void main() {
-	uint yVal = inPosition % 12;
-	uint xVal = inPosition - (12 * yVal);
+	uint xVal = position % width;
+	uint yVal = uint(position / width);
 
-	gl_Position = vec4(xVal * offset.x, yVal * offset.y, 0.0, 1.0);
-	fragColour = inColour;
+	gl_Position = vec4(
+		-1.0 + (xVal * offset.x),
+		-1.0 + (yVal * offset.y),
+		0.0, 1.0);
 }

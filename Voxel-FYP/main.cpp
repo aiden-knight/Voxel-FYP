@@ -19,7 +19,17 @@ int main()
 		{
 			window->PollEvents();
 
-			renderer->DrawFrame();
+			try
+			{
+				renderer->DrawFrame();
+			}
+			catch (std::exception& ex)
+			{
+				std::cout << ex.what() << std::endl;
+				vulkanWrapper.RecreateSwapChain();
+				if (window->resized)
+					window->resized = false;
+			}
 		}
 	}
 	return 0;

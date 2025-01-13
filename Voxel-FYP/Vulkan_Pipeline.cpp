@@ -13,13 +13,20 @@ Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass) :
 
 vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, RenderPassPtr renderPass) {
     auto vertShader = CreateShaderModule(device, "shaders/shader.vert.spv");
+    auto geomShader = CreateShaderModule(device, "shaders/shader.geom.spv");
     auto fragShader = CreateShaderModule(device, "shaders/shader.frag.spv");
 
-    std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages = { {
+    std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { {
         {
             {},
             vk::ShaderStageFlagBits::eVertex,
             vertShader,
+            "main"
+        },
+        {
+            {},
+            vk::ShaderStageFlagBits::eGeometry,
+            geomShader,
             "main"
         },
         {
@@ -35,7 +42,7 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
 
     vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, bindingDesc, attributeDesc};
 
-    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::eTriangleList, vk::False };
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::ePointList, vk::False };
     vk::PipelineViewportStateCreateInfo viewportState = { {}, 1, nullptr, 1, nullptr };
     vk::PipelineMultisampleStateCreateInfo multisampler = { {}, vk::SampleCountFlagBits::e1, vk::False };
 

@@ -55,6 +55,7 @@ void Vulkan_Wrapper::RecreateSwapChain()
 	}
 
 	m_device->GetHandle().waitIdle();
+	m_device->ResetSwapChainSupportDetails(m_surface);
 
 	m_swapChain.reset(new Vulkan_SwapChain(m_device, m_surface, { static_cast<uint32_t>(width), static_cast<uint32_t>(height) }, m_swapChain.get()));
 

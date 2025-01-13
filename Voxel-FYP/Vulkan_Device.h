@@ -31,6 +31,7 @@ public:
 	const vk::raii::Device& GetHandle() const { return m_device; }
 
 	const SwapChainSupportDetails GetSwapChainSupportDetails() const { return m_swapChainSupportDetails; }
+	void ResetSwapChainSupportDetails(SurfacePtr surface);
 
 private:
 	struct QueueFamilyIndices
