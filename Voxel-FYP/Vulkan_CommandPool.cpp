@@ -26,12 +26,12 @@ void Vulkan_CommandPool::EndSingleTimeCommands(vk::raii::CommandBuffer&& command
 {
 	commandBuffer.end();
 
-	vk::CommandBuffer buffer[] = { commandBuffer };
+	std::array<vk::CommandBuffer, 1> buffer{ commandBuffer };
 
-	std::array<vk::SubmitInfo, 1> submitInfo{{{
-		0, nullptr, // wait semaphore
-		nullptr, // wait dest stage
-		1, buffer
+	std::array<vk::SubmitInfo, 1> submitInfo{ {{
+		{},			// wait semaphore
+		{ nullptr },// wait dest stage
+		buffer
 	}}};
 
 	vk::raii::Queue queue = m_deviceOwnerRef->GetQueue(m_poolType);

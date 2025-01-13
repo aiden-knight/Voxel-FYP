@@ -1,5 +1,6 @@
 #include "Vulkan_Buffer.h"
 #include "Vulkan_Device.h"
+#include "Vulkan_CommandPool.h"
 
 Vulkan_Buffer::Vulkan_Buffer(DevicePtr device, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::MemoryPropertyFlags properties) :
 	m_buffer{CreateBuffer(device, size, flags)},
@@ -15,6 +16,15 @@ void Vulkan_Buffer::FillBuffer(const void* inputData)
 	void* data = m_bufferMemory.mapMemory(0, memRequirements.size);
 	std::memcpy(data, inputData, static_cast<size_t>(memRequirements.size));
 	m_bufferMemory.unmapMemory();
+}
+
+void Vulkan_Buffer::CopyFromBuffer(CommandPoolPtr commandPool, Vulkan_Buffer& source, vk::DeviceSize size)
+{
+	auto commandBuffer = commandPool->BeginSingleTimeCommands();
+
+	std::array<vk::BufferCopy, 1> regions{ { {0, 0, size} } };
+	commandBuffer.copyBuffer(source.m_buffer, m_buffer, regions);
+	commandPool->EndSingleTimeCommands(std::move(commandBuffer));
 }
 
 vk::raii::Buffer Vulkan_Buffer::CreateBuffer(DevicePtr device, vk::DeviceSize size, vk::BufferUsageFlags flags) const 

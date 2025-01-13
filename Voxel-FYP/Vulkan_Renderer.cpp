@@ -35,7 +35,7 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
 	}
 
-	CreateVertexBuffer();
+	CreateVertexBuffer(device, graphicsPool);
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -47,7 +47,7 @@ Vulkan_Renderer::~Vulkan_Renderer()
 void Vulkan_Renderer::DrawFrame() 
 {
 	std::array<vk::Fence, 1> fences{ m_inFlightFence[currentFrame]};
-	m_deviceRef->GetHandle().waitForFences(fences, vk::True, UINT64_MAX);
+	{ auto discard = m_deviceRef->GetHandle().waitForFences(fences, vk::True, UINT64_MAX); }
 
 	std::pair<vk::Result, uint32_t> ret = m_swapChainRef->GetHandle().acquireNextImage(UINT64_MAX, m_imageAvailableSemaphore[currentFrame]);
 	if (ret.first == vk::Result::eErrorOutOfDateKHR) {
@@ -60,7 +60,6 @@ void Vulkan_Renderer::DrawFrame()
 	m_deviceRef->GetHandle().resetFences(fences);
 	m_commandBuffers[currentFrame].reset();
 	RecordCommandBuffer(ret.second);
-
 
 	// submit info
 	std::array<vk::Semaphore, 1> waitSemaphores{ m_imageAvailableSemaphore[currentFrame] };
@@ -130,9 +129,9 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	m_commandBuffers[currentFrame].end();
 }
 
-void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device)
+void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device, CommandPoolPtr transferPool)
 {
-	size_t bufferSize = sizeof(Vertex) * g_vertices.size();
+	vk::DeviceSize bufferSize = sizeof(Vertex) * g_vertices.size();
 
 	Vulkan_Buffer stagingBuffer{ device, bufferSize, 
 		vk::BufferUsageFlagBits::eTransferSrc,
@@ -144,4 +143,5 @@ void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device)
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
 		vk::MemoryPropertyFlagBits::eDeviceLocal));
 	// TRANSFER STAGING BUFFER MEMORY INTO VERTEX BUFFER
+	m_vertexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
 }

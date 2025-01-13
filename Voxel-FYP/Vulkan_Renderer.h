@@ -35,5 +35,5 @@ private:
 	std::unique_ptr<Vulkan_Buffer> m_vertexBuffer;
 
 	void RecordCommandBuffer(uint32_t imageIndex);
-	void CreateVertexBuffer(DevicePtr device);
+	void CreateVertexBuffer(DevicePtr device, CommandPoolPtr transferPool);
 };

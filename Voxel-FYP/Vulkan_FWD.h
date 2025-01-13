@@ -21,3 +21,4 @@ using RendererPtr = const std::unique_ptr<Vulkan_Renderer>&;
 using RenderPassPtr = const std::unique_ptr<Vulkan_RenderPass>&;
 using SurfacePtr = const std::unique_ptr<Vulkan_Surface>&;
 using SwapChainPtr = const std::unique_ptr<Vulkan_SwapChain>&;
+using BufferPtr = const std::unique_ptr<Vulkan_Buffer>&;
