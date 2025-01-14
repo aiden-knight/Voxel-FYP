@@ -27,6 +27,12 @@ void Vulkan_Buffer::CopyFromBuffer(CommandPoolPtr commandPool, Vulkan_Buffer& so
 	commandPool->EndSingleTimeCommands(std::move(commandBuffer));
 }
 
+void* Vulkan_Buffer::MapMemory() const
+{
+	vk::MemoryRequirements memRequirements = m_buffer.getMemoryRequirements();
+	return m_bufferMemory.mapMemory(0, memRequirements.size);
+}
+
 vk::raii::Buffer Vulkan_Buffer::CreateBuffer(DevicePtr device, vk::DeviceSize size, vk::BufferUsageFlags flags) const 
 {
 	vk::BufferCreateInfo createInfo{

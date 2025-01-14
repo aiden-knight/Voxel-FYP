@@ -4,24 +4,25 @@
 #include <optional> 
 #include "Vulkan_FWD.h"
 
-constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-
 class Vulkan_Wrapper;
 
 class Vulkan_Renderer
 {
 public:
-	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool);
+	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets);
 	~Vulkan_Renderer();
 
 	void DrawFrame();
 private:
+	using Buffer = std::unique_ptr<Vulkan_Buffer>;
+
 	// references to needed elements
 	Vulkan_Wrapper *const m_owner;
 	DevicePtr m_deviceRef;
 	RenderPassPtr m_renderPassRef;
 	SwapChainPtr m_swapChainRef;
 	PipelinePtr m_pipelineRef;
+	DescriptorSetsPtr m_descriptorSetsRef;
 
 	// for actual rendering
 	vk::raii::CommandBuffers m_commandBuffers;
@@ -32,10 +33,15 @@ private:
 	uint32_t currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
-	std::unique_ptr<Vulkan_Buffer> m_vertexBuffer;
-	std::unique_ptr<Vulkan_Buffer> m_indexBuffer;
+	Buffer m_vertexBuffer;
+	Buffer m_indexBuffer;
+
+	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
 
 	void RecordCommandBuffer(uint32_t imageIndex);
 	void CreateVertexBuffer(DevicePtr device, CommandPoolPtr transferPool);
 	void CreateIndexBuffer(DevicePtr device, CommandPoolPtr transferPool);
+	void CreateUniformBuffer(DevicePtr device);
+
+	void UpdateUniforms(uint32_t imageIndex);
 };

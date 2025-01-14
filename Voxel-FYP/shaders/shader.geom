@@ -27,22 +27,22 @@ void main() {
 	gl_Position = gl_in[0].gl_Position + vec4(vertices[0], 0.0, 0.0);
 	fragColour = colours[0];
 	EmitVertex();
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[1], 0.0, 0.0);
-	fragColour = colours[1];
-	EmitVertex();
 	gl_Position = gl_in[0].gl_Position + vec4(vertices[2], 0.0, 0.0);
 	fragColour = colours[2];
+	EmitVertex();
+	gl_Position = gl_in[0].gl_Position + vec4(vertices[1], 0.0, 0.0);
+	fragColour = colours[1];
 	EmitVertex();
 	EndPrimitive();
 
 	gl_Position = gl_in[0].gl_Position + vec4(vertices[2], 0.0, 0.0);
 	fragColour = colours[2];
 	EmitVertex();
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[3], 0.0, 0.0);
-	fragColour = colours[3];
-	EmitVertex();
 	gl_Position = gl_in[0].gl_Position + vec4(vertices[0], 0.0, 0.0);
 	fragColour = colours[0];
+	EmitVertex();
+	gl_Position = gl_in[0].gl_Position + vec4(vertices[3], 0.0, 0.0);
+	fragColour = colours[3];
 	EmitVertex();
 	EndPrimitive();
 }

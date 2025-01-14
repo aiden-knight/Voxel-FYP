@@ -1,14 +1,24 @@
 #include "Vulkan_Pipeline.h"
 #include "Vulkan_Device.h"
 #include "Vulkan_RenderPass.h"
+#include "Vulkan_DescriptorSets.h"
 #include "Structures.h"
 #include <fstream>
 
-Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass) :
-    m_pipelineLayout{device->GetHandle(), vk::PipelineLayoutCreateInfo()},
+Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass, DescriptorSetsPtr descriptorSets) :
+    m_pipelineLayout{CreatePipelineLayout(device, descriptorSets)},
 	m_pipeline{ CreateGraphicsPipeline(device, renderPass)}
 {
 
+}
+
+vk::raii::PipelineLayout Vulkan_Pipeline::CreatePipelineLayout(DevicePtr device, DescriptorSetsPtr descriptorSets)
+{
+    std::vector<vk::DescriptorSetLayout> layouts {descriptorSets->GetLayout() };
+    vk::PipelineLayoutCreateInfo createInfo{
+        {},layouts
+    };
+    return device->GetHandle().createPipelineLayout(createInfo);
 }
 
 vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, RenderPassPtr renderPass) {
@@ -50,7 +60,7 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
         {}, // flags
         vk::False, // depth clamp
         vk::False, // discard enable
-        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise,
+        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
         vk::False, 0.0f, 0.0f, 0.0f,// depth bias
         1.0f // line width
     };

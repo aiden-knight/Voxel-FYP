@@ -13,6 +13,7 @@ public:
 
 	void FillBuffer(const void* inputData);
 	void CopyFromBuffer(CommandPoolPtr commandPool, Vulkan_Buffer& source, vk::DeviceSize size);
+	void* MapMemory() const;
 private:
 	vk::raii::Buffer m_buffer;
 	vk::raii::DeviceMemory m_bufferMemory;

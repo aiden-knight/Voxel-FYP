@@ -11,6 +11,7 @@ class Vulkan_RenderPass;
 class Vulkan_Surface;
 class Vulkan_SwapChain;
 class Vulkan_Buffer;
+class Vulkan_DescriptorSets;
 
 using CommandPoolPtr = const std::unique_ptr<Vulkan_CommandPool>&;
 using DebuggerPtr = const std::unique_ptr<Vulkan_Debugger>&;
@@ -22,3 +23,4 @@ using RenderPassPtr = const std::unique_ptr<Vulkan_RenderPass>&;
 using SurfacePtr = const std::unique_ptr<Vulkan_Surface>&;
 using SwapChainPtr = const std::unique_ptr<Vulkan_SwapChain>&;
 using BufferPtr = const std::unique_ptr<Vulkan_Buffer>&;
+using DescriptorSetsPtr = const std::unique_ptr<Vulkan_DescriptorSets>&;

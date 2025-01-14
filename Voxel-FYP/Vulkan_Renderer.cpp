@@ -6,8 +6,11 @@
 #include "Vulkan_Device.h"
 #include "Vulkan_Wrapper.h"
 #include "Vulkan_Buffer.h"
+#include "Vulkan_DescriptorSets.h"
 #include "GLFW_Window.h"
 #include "Structures.h"
+
+#include <chrono>
 
 const std::vector<Vertex> g_vertices = {
 	{36},
@@ -38,31 +41,36 @@ const std::vector<Vertex> g_vertices = {
 };
 
 const std::vector<uint16_t> g_indices = {
-	
+	0
 };
 
-Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool) :
+Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets) :
 	m_owner{owner},
 	m_deviceRef{device},
 	m_swapChainRef{swapChain},
 	m_renderPassRef{renderPass},
 	m_pipelineRef{pipeline},
+	m_descriptorSetsRef{descriptorSets},
 	m_commandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)}
 {
 	m_clearColour = { {0.0f, 0.0f, 0.0f, 1.0f} };
 
-	m_imageAvailableSemaphore.reserve(2);
-	m_renderFinishedSemaphore.reserve(2);
-	m_inFlightFence.reserve(2);
+	m_imageAvailableSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_inFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) 
 	{
 		m_imageAvailableSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_renderFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+		CreateUniformBuffer(device);
 	}
 
 	CreateVertexBuffer(device, graphicsPool);
 	CreateIndexBuffer(device, graphicsPool);
+
+	descriptorSets->UpdateDescriptorSets(device, m_uniformBuffers);
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -93,6 +101,8 @@ void Vulkan_Renderer::DrawFrame()
 	std::array<vk::PipelineStageFlags, 1> waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	std::array<vk::CommandBuffer, 1> commandBuffers{ m_commandBuffers[currentFrame] };
 	std::array<vk::Semaphore, 1> signalSemaphores{ m_renderFinishedSemaphore[currentFrame] };
+
+	UpdateUniforms(currentFrame);
 
 	std::array<vk::SubmitInfo, 1> submitInfo{ {{ waitSemaphores, waitStages, commandBuffers, signalSemaphores}} };
 	m_deviceRef->GetQueue(GRAPHICS).submit(submitInfo, m_inFlightFence[currentFrame]);
@@ -151,7 +161,9 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	m_commandBuffers[currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
 	m_commandBuffers[currentFrame].bindIndexBuffer(m_indexBuffer->GetHandle(), 0, vk::IndexType::eUint16);
 
-	
+	const std::vector<vk::DescriptorSet> descriptorSets{ m_descriptorSetsRef->GetDesciptorSet(currentFrame) };
+	m_commandBuffers[currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetLayout(), 0, descriptorSets, {});
+
 	//m_commandBuffers[currentFrame].drawIndexed(static_cast<uint32_t>(g_indices.size()), 1, 0, 0, 0);
 	m_commandBuffers[currentFrame].draw(static_cast<uint32_t>(g_vertices.size()), 1, 0, 0);
 
@@ -191,4 +203,33 @@ void Vulkan_Renderer::CreateIndexBuffer(DevicePtr device, CommandPoolPtr transfe
 		vk::MemoryPropertyFlagBits::eDeviceLocal));
 
 	m_indexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
+}
+
+void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
+{
+	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
+
+	auto& [buffer, memory] = m_uniformBuffers.emplace_back(
+		Vulkan_Buffer(device, bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent),
+		nullptr);
+
+	memory = buffer.MapMemory();
+}
+
+void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	auto extent = m_swapChainRef->GetImageExtent();
+
+	UniformBufferObject ubo{}; 
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 10.0f);
+	ubo.proj[1][1] *= -1;
+
+	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));
 }

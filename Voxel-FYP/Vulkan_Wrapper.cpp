@@ -8,6 +8,8 @@
 #include "Vulkan_Pipeline.h"
 #include "Vulkan_CommandPool.h"
 #include "Vulkan_Renderer.h"
+#include "Vulkan_DescriptorSets.h"
+#include "Structures.h"
 #include "GLFW_Window.h"
 
 Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
@@ -24,12 +26,14 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_window->GetFramebufferSize(&width, &height);
 	m_swapChain.reset(new Vulkan_SwapChain(m_device, m_surface, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, nullptr));
 
+	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, MAX_FRAMES_IN_FLIGHT));
+
 	m_renderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat()));
-	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_renderPass));
+	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_renderPass, m_descriptorSets));
 
 	m_swapChain->CreateFramebuffers(m_device, m_renderPass);
 	m_graphicsPool.reset(new Vulkan_CommandPool(m_device, GRAPHICS));
-	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_swapChain, m_pipeline, m_graphicsPool));
+	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets));
 }
 
 Vulkan_Wrapper::~Vulkan_Wrapper()

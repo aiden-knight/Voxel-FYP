@@ -33,6 +33,7 @@ private:
 	std::unique_ptr<Vulkan_Pipeline> m_pipeline;
 
 	std::unique_ptr<Vulkan_CommandPool> m_graphicsPool;
+	std::unique_ptr<Vulkan_DescriptorSets> m_descriptorSets;
 	std::unique_ptr<Vulkan_Renderer> m_renderer;
 
 	GLFW_Window* m_window;
