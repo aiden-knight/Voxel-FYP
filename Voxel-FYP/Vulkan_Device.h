@@ -23,12 +23,21 @@ class Vulkan_Device
 public:
 	Vulkan_Device(InstancePtr instance, SurfacePtr surface);
 
+	const vk::raii::Device& GetHandle() const { return m_device; }
+
 	vk::raii::Queue GetQueue(QueueType type) const;
 	uint32_t GetQueueIndex(QueueType type) const;
 
 	uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const;
 
-	const vk::raii::Device& GetHandle() const { return m_device; }
+	vk::Format FindDepthFormat() const 
+	{
+		return FindSupportedFormat(
+		{ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint },
+		vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	}
+
+	vk::Format FindSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags) const;
 
 	const SwapChainSupportDetails GetSwapChainSupportDetails() const { return m_swapChainSupportDetails; }
 	void ResetSwapChainSupportDetails(SurfacePtr surface);

@@ -1,6 +1,7 @@
 #include "Vulkan_SwapChain.h"
 #include "Vulkan_Device.h"
 #include "Vulkan_Surface.h"
+#include "Vulkan_Image.h"
 #include "Vulkan_RenderPass.h"
 
 #include <algorithm>
@@ -31,13 +32,13 @@ Vulkan_SwapChain::Vulkan_SwapChain(DevicePtr device, SurfacePtr surface, vk::Ext
 	}
 }
 
-void Vulkan_SwapChain::CreateFramebuffers(DevicePtr device, RenderPassPtr renderPass)
+void Vulkan_SwapChain::CreateFramebuffers(DevicePtr device, RenderPassPtr renderPass, ImagePtr depthImage)
 {
 	m_frameBuffers.reserve(m_imageViews.size());
 
 	for (const auto& imageView : m_imageViews) 
 	{
-		std::array<vk::ImageView, 1> attachments = { imageView };
+		std::vector<vk::ImageView> attachments = { imageView, depthImage->GetImageView() };
 
 		vk::FramebufferCreateInfo createInfo{
 			{}, // flags

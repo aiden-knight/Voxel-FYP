@@ -30,6 +30,7 @@ private:
 	std::unique_ptr<Vulkan_Device> m_device;
 	std::unique_ptr<Vulkan_SwapChain> m_swapChain;
 	std::unique_ptr<Vulkan_RenderPass> m_renderPass;
+	std::unique_ptr<Vulkan_Image> m_depthImage;
 	std::unique_ptr<Vulkan_Pipeline> m_pipeline;
 
 	std::unique_ptr<Vulkan_CommandPool> m_graphicsPool;

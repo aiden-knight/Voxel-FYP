@@ -134,7 +134,7 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	vk::CommandBufferBeginInfo beginInfo{};
 	m_commandBuffers[currentFrame].begin(beginInfo);
 
-	std::array<vk::ClearValue, 1> clearValues = { m_clearColour };
+	std::array<vk::ClearValue, 2> clearValues = { m_clearColour, {{1.0f, 0}} };
 
 	vk::Rect2D renderArea{ {0,0}, m_swapChainRef->GetImageExtent()};
 

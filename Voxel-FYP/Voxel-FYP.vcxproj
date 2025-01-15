@@ -154,6 +154,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Vulkan_DescriptorSets.cpp" />
     <ClCompile Include="Vulkan_Device.cpp" />
+    <ClCompile Include="Vulkan_Image.cpp" />
     <ClCompile Include="Vulkan_Instance.cpp" />
     <ClCompile Include="Vulkan_Pipeline.cpp" />
     <ClCompile Include="Vulkan_Renderer.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="Vulkan_Debugger.h" />
     <ClInclude Include="GLFW_Window.h" />
     <ClInclude Include="Vulkan_Device.h" />
+    <ClInclude Include="Vulkan_Image.h" />
     <ClInclude Include="Vulkan_Instance.h" />
     <ClInclude Include="Vulkan_Pipeline.h" />
     <ClInclude Include="Vulkan_Renderer.h" />

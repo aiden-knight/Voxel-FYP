@@ -16,7 +16,7 @@ public:
     const vk::Extent2D GetImageExtent() const { return m_imageExtent; }
 
     const vk::raii::Framebuffer& GetFramebuffer(uint32_t index) const { return m_frameBuffers[index]; }
-    void CreateFramebuffers(DevicePtr device, RenderPassPtr renderPass);
+    void CreateFramebuffers(DevicePtr device, RenderPassPtr renderPass, ImagePtr depthImage);
 private:
     const vk::Extent2D m_imageExtent;
     const vk::Format m_imageFormat;

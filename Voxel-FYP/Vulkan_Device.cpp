@@ -50,6 +50,20 @@ uint32_t Vulkan_Device::FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFl
 	throw std::runtime_error("failed to find suitable memory type");
 }
 
+vk::Format Vulkan_Device::FindSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags) const
+{
+	for (vk::Format format : candidates)
+	{
+		vk::FormatProperties properties = m_physicalDevice.getFormatProperties(format);
+
+		if (tiling == vk::ImageTiling::eLinear && (properties.linearTilingFeatures & featureFlags) == featureFlags)
+			return format;
+		else if (tiling == vk::ImageTiling::eOptimal && (properties.optimalTilingFeatures & featureFlags) == featureFlags)
+			return format;
+	}
+	throw std::runtime_error("failed to find supported format");
+}
+
 void Vulkan_Device::ResetSwapChainSupportDetails(SurfacePtr surface)
 {
 	m_swapChainSupportDetails.capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(surface->GetHandle());

@@ -74,6 +74,12 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
     std::array<vk::DynamicState, 2> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     vk::PipelineDynamicStateCreateInfo dynamicState = { {}, static_cast<uint32_t>(dynamicStates.size()), dynamicStates.data() };
 
+    vk::PipelineDepthStencilStateCreateInfo depthStencilState{ {},
+        vk::True, vk::True, // depthTestEnable, depthWriteEnable
+        vk::CompareOp::eLess,
+        vk::False, vk::False // depthBoundsTestEnable, stencilTestEnable
+    };
+
     vk::GraphicsPipelineCreateInfo createInfo = {
         {}, // flags
         static_cast<uint32_t>(shaderStages.size()),
@@ -84,7 +90,7 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
         &viewportState,
         &rasteriser,
         &multisampler,
-        nullptr, // depth stencil state
+        &depthStencilState,
         &colourBlending,
         &dynamicState,
         m_pipelineLayout, renderPass->GetHandle(),
