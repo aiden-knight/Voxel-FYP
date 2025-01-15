@@ -30,7 +30,7 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, MAX_FRAMES_IN_FLIGHT));
 
 	m_renderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat()));
-	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_renderPass, m_descriptorSets));
+	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_descriptorSets, m_renderPass));
 	m_depthImage.reset(new Vulkan_Image(m_device, vk::Extent3D(m_swapChain->GetImageExtent(), 1), m_device->FindDepthFormat(),
 		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth));
 
