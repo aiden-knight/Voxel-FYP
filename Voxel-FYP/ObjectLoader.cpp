@@ -14,7 +14,7 @@ namespace std
     {
         size_t operator()(const Vertex& vertex) const
         {
-            return hash<glm::vec3>()(vertex.pos);
+            return (hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.normal) << 1));
         }
     };
 }
@@ -43,6 +43,17 @@ namespace ObjectLoader
                     attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
+
+                if (index.normal_index >= 0) {
+                    vertex.normal = {
+                        attrib.normals[3 * index.normal_index + 0],
+                        attrib.normals[3 * index.normal_index + 1],
+                        attrib.normals[3 * index.normal_index + 2]
+                    };
+                }
+                else {
+                    vertex.normal = { 0.0f, 0.0f, 0.0f };
+                }
 
                 /*vertex.texCoord = {
                     attrib.texcoords[2 * index.texcoord_index + 0],

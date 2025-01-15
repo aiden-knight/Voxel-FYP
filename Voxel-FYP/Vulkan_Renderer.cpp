@@ -36,7 +36,7 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		CreateUniformBuffer(device);
 	}
 
-	m_model.reset(new Vulkan_Model(device, graphicsPool, "stanford-bunny.obj"));
+	m_model.reset(new Vulkan_Model(device, graphicsPool, "armadillo2.obj"));
 
 	descriptorSets->UpdateDescriptorSets(device, m_uniformBuffers);
 }
@@ -155,9 +155,9 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 
 	UniformBufferObject ubo{}; 
 	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 1.0f, 0.0f));
-	ubo.model = glm::mat4(1.0f);
-	ubo.view = glm::lookAt(glm::vec3(0.3f, 0.5f, 0.3f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 10.0f);
+	ubo.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f,0.1f,0.1f));
+	ubo.view = glm::lookAt(glm::vec3(0.0f, 10.0f, -35), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 100.0f);
 	ubo.proj[1][1] *= -1;
 
 	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));
