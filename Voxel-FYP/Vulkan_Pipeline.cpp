@@ -33,12 +33,12 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
             vertShader,
             "main"
         },
-        {
-            {},
-            vk::ShaderStageFlagBits::eGeometry,
-            geomShader,
-            "main"
-        },
+        //{
+        //    {},
+        //    vk::ShaderStageFlagBits::eGeometry,
+        //    geomShader,
+        //    "main"
+        //},
         {
             {},
             vk::ShaderStageFlagBits::eFragment,
@@ -52,7 +52,7 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
 
     vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, bindingDesc, attributeDesc};
 
-    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::ePointList, vk::False };
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::eTriangleList, vk::False };
     vk::PipelineViewportStateCreateInfo viewportState = { {}, 1, nullptr, 1, nullptr };
     vk::PipelineMultisampleStateCreateInfo multisampler = { {}, vk::SampleCountFlagBits::e1, vk::False };
 

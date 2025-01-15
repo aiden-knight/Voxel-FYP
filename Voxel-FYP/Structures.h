@@ -8,7 +8,7 @@
 
 struct Vertex 
 {
-	glm::uint32 pos;
+	glm::vec3 pos;
 
 	static std::array<vk::VertexInputBindingDescription, 1> GetBindingDescription() {
 		vk::VertexInputBindingDescription bindingDesc{
@@ -20,10 +20,15 @@ struct Vertex
 
 	static std::array<vk::VertexInputAttributeDescription, 1> GetAttributeDescriptions() {
 		std::array<vk::VertexInputAttributeDescription, 1> attributeDescriptions{ {
-			{ 0, 0, vk::Format::eR32Uint, offsetof(Vertex, pos) }
+			{ 0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos) }
 		} };
 
 		return attributeDescriptions;
+	}
+
+	bool operator==(const Vertex& other) const
+	{
+		return pos == other.pos;
 	}
 };
 
