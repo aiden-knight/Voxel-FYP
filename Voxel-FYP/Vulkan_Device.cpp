@@ -117,7 +117,7 @@ vk::raii::PhysicalDevice Vulkan_Device::ChoosePhysicalDevice(const std::unique_p
 		std::vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
 		for (const vk::QueueFamilyProperties& family : queueFamilies)
 		{
-			if (family.queueFlags & vk::QueueFlagBits::eGraphics)
+			if ((family.queueFlags & vk::QueueFlagBits::eGraphics) && (family.queueFlags & vk::QueueFlagBits::eCompute))
 				m_queueFamilies.graphicsFamily = queueIndex;
 			
 			if (device.getSurfaceSupportKHR(queueIndex, surface->GetHandle()))

@@ -6,6 +6,7 @@
 #define WIN32
 #include <vulkan/vulkan_raii.hpp>
 
+// Vertex format for use in vertex shader
 struct Vertex 
 {
 	glm::vec3 pos;
@@ -21,8 +22,9 @@ struct Vertex
 
 	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions() {
 		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions{ {
-			{ 0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos) },
-			{ 1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal) }
+			//	Layout	Binding		Format aka how many bytes		Offset from vertex start
+			{	0,		0,			vk::Format::eR32G32B32Sfloat,	offsetof(Vertex, pos) },
+			{	1,		0,			vk::Format::eR32G32B32Sfloat,	offsetof(Vertex, normal) }
 		} };
 
 		return attributeDescriptions;
@@ -34,8 +36,10 @@ struct Vertex
 	}
 };
 
+// Used for number of framebuffers etc
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
+// Uniform buffer object for passing data to shader every frame (ideally once)
 struct UniformBufferObject {
 	glm::mat4 model;
 	glm::mat4 view;

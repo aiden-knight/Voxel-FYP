@@ -150,6 +150,7 @@
     <ClCompile Include="ObjectLoader.cpp" />
     <ClCompile Include="Vulkan_Buffer.cpp" />
     <ClCompile Include="Vulkan_CommandPool.cpp" />
+    <ClCompile Include="Vulkan_ComputePipeline.cpp" />
     <ClCompile Include="Vulkan_Debugger.cpp" />
     <ClCompile Include="GLFW_Window.cpp" />
     <ClCompile Include="main.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="ObjectLoader.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Vulkan_Buffer.h" />
+    <ClInclude Include="Vulkan_ComputePipeline.h" />
     <ClInclude Include="Vulkan_DescriptorSets.h" />
     <ClInclude Include="Vulkan_FWD.h" />
     <ClInclude Include="Vulkan_CommandPool.h" />
