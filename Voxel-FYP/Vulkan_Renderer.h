@@ -33,14 +33,10 @@ private:
 	uint32_t currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
-	Buffer m_vertexBuffer;
-	Buffer m_indexBuffer;
-
+	std::unique_ptr<Vulkan_Model> m_model;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
 
 	void RecordCommandBuffer(uint32_t imageIndex);
-	void CreateVertexBuffer(DevicePtr device, CommandPoolPtr transferPool);
-	void CreateIndexBuffer(DevicePtr device, CommandPoolPtr transferPool);
 	void CreateUniformBuffer(DevicePtr device);
 
 	void UpdateUniforms(uint32_t imageIndex);

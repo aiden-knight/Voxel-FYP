@@ -6,43 +6,12 @@
 #include "Vulkan_Device.h"
 #include "Vulkan_Wrapper.h"
 #include "Vulkan_Buffer.h"
+#include "Vulkan_Model.h"
 #include "Vulkan_DescriptorSets.h"
 #include "GLFW_Window.h"
 #include "Structures.h"
 
 #include <chrono>
-
-const std::vector<Vertex> g_vertices = {
-	{36},
-	{40},
-	{52},
-	{56},
-	{68},
-	{72},
-	{106},
-	{113},
-	{120},
-	{121},
-	{130},
-	{131},
-	{132},
-	{133},
-	{134},
-	{135},
-	{136},
-	{138},
-	{150},
-	{155},
-	{167},
-	{171},
-	{184},
-	{185},
-	{186}
-};
-
-const std::vector<uint16_t> g_indices = {
-	0
-};
 
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets) :
 	m_owner{owner},
@@ -67,8 +36,7 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		CreateUniformBuffer(device);
 	}
 
-	CreateVertexBuffer(device, graphicsPool);
-	CreateIndexBuffer(device, graphicsPool);
+	m_model.reset(new Vulkan_Model(device, graphicsPool, "armadillo2.obj"));
 
 	descriptorSets->UpdateDescriptorSets(device, m_uniformBuffers);
 }
@@ -156,53 +124,13 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	m_commandBuffers[currentFrame].setViewport(0, viewports);
 	m_commandBuffers[currentFrame].setScissor(0, scissors);
 
-	std::array<vk::Buffer, 1> vertexBuffers{m_vertexBuffer->GetHandle()};
-	std::array<vk::DeviceSize, 1> offsets{ 0 };
-	m_commandBuffers[currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
-	m_commandBuffers[currentFrame].bindIndexBuffer(m_indexBuffer->GetHandle(), 0, vk::IndexType::eUint16);
-
 	const std::vector<vk::DescriptorSet> descriptorSets{ m_descriptorSetsRef->GetDesciptorSet(currentFrame) };
 	m_commandBuffers[currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetLayout(), 0, descriptorSets, {});
 
-	//m_commandBuffers[currentFrame].drawIndexed(static_cast<uint32_t>(g_indices.size()), 1, 0, 0, 0);
-	m_commandBuffers[currentFrame].draw(static_cast<uint32_t>(g_vertices.size()), 1, 0, 0);
+	m_model->Draw(m_commandBuffers[currentFrame]);
 
 	m_commandBuffers[currentFrame].endRenderPass();
 	m_commandBuffers[currentFrame].end();
-}
-
-void Vulkan_Renderer::CreateVertexBuffer(DevicePtr device, CommandPoolPtr transferPool)
-{
-	vk::DeviceSize bufferSize = sizeof(Vertex) * g_vertices.size();
-
-	Vulkan_Buffer stagingBuffer{ device, bufferSize, 
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-
-	stagingBuffer.FillBuffer(g_vertices.data());
-
-	m_vertexBuffer.reset(new Vulkan_Buffer(device, bufferSize,
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
-		vk::MemoryPropertyFlagBits::eDeviceLocal));
-
-	m_vertexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
-}
-
-void Vulkan_Renderer::CreateIndexBuffer(DevicePtr device, CommandPoolPtr transferPool)
-{
-	vk::DeviceSize bufferSize = sizeof(uint16_t) * g_indices.size();
-
-	Vulkan_Buffer stagingBuffer{ device, bufferSize,
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-
-	stagingBuffer.FillBuffer(g_indices.data());
-
-	m_indexBuffer.reset(new Vulkan_Buffer(device, bufferSize,
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-		vk::MemoryPropertyFlagBits::eDeviceLocal));
-
-	m_indexBuffer->CopyFromBuffer(transferPool, stagingBuffer, bufferSize);
 }
 
 void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
@@ -226,9 +154,10 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	auto extent = m_swapChainRef->GetImageExtent();
 
 	UniformBufferObject ubo{}; 
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 10.0f);
+	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+	ubo.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f,0.1f,0.1f));
+	ubo.view = glm::lookAt(glm::vec3(0.0f, 10.0f, -35), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 100.0f);
 	ubo.proj[1][1] *= -1;
 
 	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));

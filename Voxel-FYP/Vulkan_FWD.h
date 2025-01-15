@@ -13,6 +13,7 @@ class Vulkan_SwapChain;
 class Vulkan_Buffer;
 class Vulkan_DescriptorSets;
 class Vulkan_Image;
+class Vulkan_Model;
 
 using CommandPoolPtr = const std::unique_ptr<Vulkan_CommandPool>&;
 using DebuggerPtr = const std::unique_ptr<Vulkan_Debugger>&;
@@ -26,3 +27,4 @@ using SwapChainPtr = const std::unique_ptr<Vulkan_SwapChain>&;
 using BufferPtr = const std::unique_ptr<Vulkan_Buffer>&;
 using DescriptorSetsPtr = const std::unique_ptr<Vulkan_DescriptorSets>&;
 using ImagePtr = const std::unique_ptr<Vulkan_Image>&;
+using ModelPtr = const std::unique_ptr<Vulkan_Model>&;

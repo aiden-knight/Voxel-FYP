@@ -5,11 +5,17 @@
 #include "Structures.h"
 #include <fstream>
 
-Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, RenderPassPtr renderPass, DescriptorSetsPtr descriptorSets) :
+Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, DescriptorSetsPtr descriptorSets, RenderPassPtr renderPass) :
     m_pipelineLayout{CreatePipelineLayout(device, descriptorSets)},
 	m_pipeline{ CreateGraphicsPipeline(device, renderPass)}
 {
 
+}
+
+Vulkan_Pipeline::Vulkan_Pipeline(DevicePtr device, DescriptorSetsPtr descriptorSets, const std::string& computeShaderFileName) :
+    m_pipelineLayout{ CreatePipelineLayout(device, descriptorSets) },
+    m_pipeline{ CreateComputePipeline(device, computeShaderFileName) }
+{
 }
 
 vk::raii::PipelineLayout Vulkan_Pipeline::CreatePipelineLayout(DevicePtr device, DescriptorSetsPtr descriptorSets)
@@ -33,12 +39,12 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
             vertShader,
             "main"
         },
-        {
-            {},
-            vk::ShaderStageFlagBits::eGeometry,
-            geomShader,
-            "main"
-        },
+        //{
+        //    {},
+        //    vk::ShaderStageFlagBits::eGeometry,
+        //    geomShader,
+        //    "main"
+        //},
         {
             {},
             vk::ShaderStageFlagBits::eFragment,
@@ -52,7 +58,7 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
 
     vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, bindingDesc, attributeDesc};
 
-    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::ePointList, vk::False };
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::eTriangleList, vk::False };
     vk::PipelineViewportStateCreateInfo viewportState = { {}, 1, nullptr, 1, nullptr };
     vk::PipelineMultisampleStateCreateInfo multisampler = { {}, vk::SampleCountFlagBits::e1, vk::False };
 
@@ -98,6 +104,21 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
     };
 
     return device->GetHandle().createGraphicsPipeline(nullptr, createInfo);
+}
+
+vk::raii::Pipeline Vulkan_Pipeline::CreateComputePipeline(DevicePtr device, const std::string& computeShaderFileName)
+{
+    vk::PipelineShaderStageCreateInfo computeShaderStage = { 
+        {}, vk::ShaderStageFlagBits::eCompute, CreateShaderModule(device, computeShaderFileName), "main" 
+    };
+
+    vk::ComputePipelineCreateInfo createInfo{
+        {},
+        computeShaderStage,
+        m_pipelineLayout
+    };
+
+    return device->GetHandle().createComputePipeline(nullptr, createInfo);
 }
 
 vk::raii::ShaderModule Vulkan_Pipeline::CreateShaderModule(DevicePtr device, const std::string& fileName) {
