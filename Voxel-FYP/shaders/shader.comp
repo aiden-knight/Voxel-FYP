@@ -14,3 +14,6 @@ layout(std140, binding = 2) buffer ParticleSSBOOut {
 	Particle particlesOut[ ];
 };
 
+void main() {
+	
+}

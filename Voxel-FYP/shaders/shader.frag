@@ -7,7 +7,7 @@ layout(location = 0) out vec4 outColor;
 
 vec3 lightPos = vec3(10.0, 15.0, -20.0);
 vec3 viewPos = vec3(0.0, 10.0, -35.0);
-vec3 lightColor = vec3(0.0, 0.0, 1.0);
+vec3 lightColor = vec3(0.0, 1.0, 1.0);
 vec3 objectColor = vec3(0.7, 0.7, 0.7);
 
 void main() {

@@ -3,9 +3,10 @@
 #include "Vulkan_Buffer.h"
 #include "Structures.h"
 
-Vulkan_DescriptorSets::Vulkan_DescriptorSets(DevicePtr device, uint32_t count) :
-	m_descriptorSetLayout{CreateDescriptorSetLayout(device)},
-	m_descriptorPool{CreateDescriptorPool(device, count)},
+// pass vector of descriptor set layouts and also vector of counts for each descriptor set
+Vulkan_DescriptorSets::Vulkan_DescriptorSets(DevicePtr device, const std::vector<vk::DescriptorSetLayoutBinding>& layouts,  uint32_t count) :
+	m_descriptorSetLayout{CreateDescriptorSetLayout(device, layouts)},
+	m_descriptorPool{CreateDescriptorPool(device, layouts, count)},
 	m_descriptorSets{AllocateDescriptorSets(device, count)}
 {
 	
@@ -16,55 +17,27 @@ const vk::raii::DescriptorSet& Vulkan_DescriptorSets::GetDesciptorSet(uint32_t i
 	return m_descriptorSets[index];
 }
 
-void Vulkan_DescriptorSets::UpdateDescriptorSets(DevicePtr device, const std::vector<std::pair<Vulkan_Buffer, void*>>& uniformBuffers)
+vk::raii::DescriptorSetLayout Vulkan_DescriptorSets::CreateDescriptorSetLayout(DevicePtr device, const std::vector<vk::DescriptorSetLayoutBinding>& layouts)
 {
-	for (size_t i = 0; i < uniformBuffers.size(); ++i)
-	{
-		std::vector<vk::DescriptorBufferInfo> bufferInfo{ {{
-			uniformBuffers[i].first.GetHandle(),
-			0,
-			sizeof(UniformBufferObject)
-		}} };
-
-		std::vector<vk::WriteDescriptorSet> descriptorWrites{ {{
-			m_descriptorSets[i],
-			0, 0, // dst binding and dst array element
-			vk::DescriptorType::eUniformBuffer,
-			{},
-			bufferInfo
-		}} };
-
-		device->GetHandle().updateDescriptorSets(descriptorWrites, {});
-	}
-}
-
-vk::raii::DescriptorSetLayout Vulkan_DescriptorSets::CreateDescriptorSetLayout(DevicePtr device)
-{
-	std::vector<vk::DescriptorSetLayoutBinding> uboBinding{ {
-		{
-			0, // binding
-			vk::DescriptorType::eUniformBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eVertex
-		}
-	} };
-
 	vk::DescriptorSetLayoutCreateInfo createInfo{
 		{}, //flags
-		uboBinding
+		layouts
 	};
 
 	return device->GetHandle().createDescriptorSetLayout(createInfo);
 }
 
-vk::raii::DescriptorPool Vulkan_DescriptorSets::CreateDescriptorPool(DevicePtr device, uint32_t count)
+vk::raii::DescriptorPool Vulkan_DescriptorSets::CreateDescriptorPool(DevicePtr device, const std::vector<vk::DescriptorSetLayoutBinding>& layouts, uint32_t count)
 {
-	std::vector<vk::DescriptorPoolSize> poolSizes{ {
-		{
-			vk::DescriptorType::eUniformBuffer,
+	std::vector<vk::DescriptorPoolSize> poolSizes;
+	poolSizes.reserve(layouts.size());
+	for(const auto& layout : layouts)
+	{
+		vk::DescriptorPoolSize poolSize{
+			layout.descriptorType,
 			static_cast<uint32_t>(count)
-		}
-	} };
+		};
+	}
 
 	vk::DescriptorPoolCreateFlags flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 

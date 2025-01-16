@@ -27,7 +27,15 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_window->GetFramebufferSize(&width, &height);
 	m_swapChain.reset(new Vulkan_SwapChain(m_device, m_surface, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, nullptr));
 
-	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, MAX_FRAMES_IN_FLIGHT));
+	std::vector<vk::DescriptorSetLayoutBinding> graphicsDescriptors{ {
+		{
+			0, // binding
+			vk::DescriptorType::eUniformBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eVertex
+		}
+	} };
+	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, graphicsDescriptors, MAX_FRAMES_IN_FLIGHT));
 
 	m_renderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat()));
 	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_descriptorSets, m_renderPass));

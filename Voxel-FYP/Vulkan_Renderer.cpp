@@ -30,15 +30,33 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 	m_uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) 
 	{
+		// create sync objects
 		m_imageAvailableSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_renderFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+
+		// create uniform buffer
 		CreateUniformBuffer(device);
+
+		// update descriptor set with uniform buffer
+		std::vector<vk::DescriptorBufferInfo> bufferInfo{ {{
+			m_uniformBuffers[i].first.GetHandle(),
+			0,
+			sizeof(UniformBufferObject)
+		}} };
+
+		std::vector<vk::WriteDescriptorSet> descriptorWrites{ {{
+			m_descriptorSetsRef->GetDesciptorSet(i),
+			0, 0, // dst binding and dst array element
+			vk::DescriptorType::eUniformBuffer,
+			{},
+			bufferInfo
+		}} };
+
+		device->GetHandle().updateDescriptorSets(descriptorWrites, {});
 	}
 
 	m_model.reset(new Vulkan_Model(device, graphicsPool, "armadillo2.obj"));
-
-	descriptorSets->UpdateDescriptorSets(device, m_uniformBuffers);
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
