@@ -1,0 +1,7 @@
+{
+    "files.exclude": {
+        "**.spv": true
+    },
+    "editor.suggest.showIcons": true,
+    "workbench.iconTheme": "vs-minimal"
+}
