@@ -25,21 +25,23 @@ private:
 
 	vk::raii::Context m_ctx;
 	std::unique_ptr<Vulkan_Instance> m_instance;
+
 	std::unique_ptr<Vulkan_Debugger> m_debugMessenger;
 	std::unique_ptr<Vulkan_Surface> m_surface;
 	std::unique_ptr<Vulkan_Device> m_device;
+
 	std::unique_ptr<Vulkan_SwapChain> m_swapChain;
 	std::unique_ptr<Vulkan_Image> m_depthImage;
+	std::unique_ptr<Vulkan_CommandPool> m_graphicsPool;
 
 	std::unique_ptr<Vulkan_RenderPass> m_renderPass;
 	std::unique_ptr<Vulkan_DescriptorSets> m_descriptorSets;
 	std::unique_ptr<Vulkan_Pipeline> m_pipeline;
 
-	std::unique_ptr<Vulkan_CommandPool> m_graphicsPool;
-	std::unique_ptr<Vulkan_Renderer> m_renderer;
-
 	std::unique_ptr<Vulkan_DescriptorSets> m_computeDescriptors;
 	std::unique_ptr<Vulkan_Pipeline> m_computePipeline;
+
+	std::unique_ptr<Vulkan_Renderer> m_renderer;
 
 	GLFW_Window* m_window;
 };
