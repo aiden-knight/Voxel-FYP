@@ -26,7 +26,7 @@ Vulkan_Model::Vulkan_Model(DevicePtr device, CommandPoolPtr transferPool, std::s
 	m_vertexBuffer{ CreateSingleBuffer(device, transferPool, m_mesh.vertices, vk::BufferUsageFlagBits::eVertexBuffer) },
 	m_indexBuffer{ CreateSingleBuffer(device, transferPool, m_mesh.indices, vk::BufferUsageFlagBits::eIndexBuffer) }
 {
-
+	
 }
 
 void Vulkan_Model::Draw(const vk::raii::CommandBuffer& commandBuffer)

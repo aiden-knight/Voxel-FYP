@@ -53,12 +53,12 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
         }
     } };
 
-    auto bindingDesc = Vertex::GetBindingDescription();
-    auto attributeDesc = Vertex::GetAttributeDescriptions();
+    auto bindingDesc = Particle::GetBindingDescription();
+    auto attributeDesc = Particle::GetAttributeDescriptions();
 
     vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, bindingDesc, attributeDesc};
 
-    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::eTriangleList, vk::False };
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = { {}, vk::PrimitiveTopology::ePointList, vk::False };
     vk::PipelineViewportStateCreateInfo viewportState = { {}, 1, nullptr, 1, nullptr };
     vk::PipelineMultisampleStateCreateInfo multisampler = { {}, vk::SampleCountFlagBits::e1, vk::False };
 
@@ -108,8 +108,10 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
 
 vk::raii::Pipeline Vulkan_Pipeline::CreateComputePipeline(DevicePtr device, const std::string& computeShaderFileName)
 {
+    vk::raii::ShaderModule compShader = CreateShaderModule(device, computeShaderFileName);
+
     vk::PipelineShaderStageCreateInfo computeShaderStage = { 
-        {}, vk::ShaderStageFlagBits::eCompute, CreateShaderModule(device, computeShaderFileName), "main" 
+        {}, vk::ShaderStageFlagBits::eCompute, compShader, "main" 
     };
 
     vk::ComputePipelineCreateInfo createInfo{

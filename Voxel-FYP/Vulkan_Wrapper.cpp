@@ -42,9 +42,32 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_depthImage.reset(new Vulkan_Image(m_device, vk::Extent3D(m_swapChain->GetImageExtent(), 1), m_device->FindDepthFormat(),
 		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth));
 
+	std::vector<vk::DescriptorSetLayoutBinding> computeDescriptors{ {
+		{
+			0, // binding
+			vk::DescriptorType::eUniformBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eCompute
+		},
+		{
+			1, // binding
+			vk::DescriptorType::eStorageBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eCompute
+		},
+		{
+			2, // binding
+			vk::DescriptorType::eStorageBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eCompute
+		}
+	} };
+	m_computeDescriptors.reset(new Vulkan_DescriptorSets(m_device, computeDescriptors, MAX_FRAMES_IN_FLIGHT));
+	m_computePipeline.reset(new Vulkan_Pipeline(m_device, m_computeDescriptors, "shaders/shader.comp.spv"));
+
 	m_swapChain->CreateFramebuffers(m_device, m_renderPass, m_depthImage);
 	m_graphicsPool.reset(new Vulkan_CommandPool(m_device, GRAPHICS));
-	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets));
+	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets, m_computePipeline, m_computeDescriptors));
 }
 
 Vulkan_Wrapper::~Vulkan_Wrapper()

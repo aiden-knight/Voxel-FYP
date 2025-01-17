@@ -36,12 +36,37 @@ struct Vertex
 	}
 };
 
+struct Particle
+{
+	glm::vec2 position;
+	glm::vec2 velocity;
+	glm::vec4 colour;
+
+	static std::array<vk::VertexInputBindingDescription, 1> GetBindingDescription() {
+		vk::VertexInputBindingDescription bindingDesc{
+			0, sizeof(Particle), vk::VertexInputRate::eVertex
+		};
+
+		return { bindingDesc };
+	}
+
+	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions() {
+		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions{ {
+				//	Location	Binding		Format aka how many bytes		Offset from vertex start
+				{	0,			0,			vk::Format::eR32G32Sfloat,		offsetof(Particle, position) },
+				{	1,			0,			vk::Format::eR32G32B32Sfloat,	offsetof(Particle, colour) }
+			} };
+
+		return attributeDescriptions;
+	}
+};
+
+constexpr uint32_t PARTICLE_COUNT = 4096;
+
 // Used for number of framebuffers etc
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 // Uniform buffer object for passing data to shader every frame (ideally once)
 struct UniformBufferObject {
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
+	float deltaTime;
 };

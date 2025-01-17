@@ -9,7 +9,8 @@ class Vulkan_Wrapper;
 class Vulkan_Renderer
 {
 public:
-	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets);
+	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, 
+		PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors);
 	~Vulkan_Renderer();
 
 	void DrawFrame();
@@ -24,20 +25,31 @@ private:
 	PipelinePtr m_pipelineRef;
 	DescriptorSetsPtr m_descriptorSetsRef;
 
+	PipelinePtr m_computePipelineRef;
+	DescriptorSetsPtr m_computeDescriptorSetsRef;
+
 	// for actual rendering
 	vk::raii::CommandBuffers m_commandBuffers;
 	std::vector<vk::raii::Semaphore> m_imageAvailableSemaphore;
 	std::vector<vk::raii::Semaphore> m_renderFinishedSemaphore;
 	std::vector<vk::raii::Fence> m_inFlightFence;
 
-	uint32_t currentFrame = 0;
+	vk::raii::CommandBuffers m_computeCommandBuffers;
+	std::vector<vk::raii::Semaphore> m_computeFinishedSemaphore;
+	std::vector<vk::raii::Fence> m_computeInFlightFence;
+
+
+	uint32_t m_currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
 	std::unique_ptr<Vulkan_Model> m_model;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
+	std::vector<Vulkan_Buffer> m_computeStorageBuffers;
 
+	void RecordComputeCommands();
 	void RecordCommandBuffer(uint32_t imageIndex);
 	void CreateUniformBuffer(DevicePtr device);
+	void CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
 
 	void UpdateUniforms(uint32_t imageIndex);
 };

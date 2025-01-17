@@ -33,10 +33,12 @@ vk::raii::DescriptorPool Vulkan_DescriptorSets::CreateDescriptorPool(DevicePtr d
 	poolSizes.reserve(layouts.size());
 	for(const auto& layout : layouts)
 	{
+		// TODO: for same descriptor types just double pool size
 		vk::DescriptorPoolSize poolSize{
 			layout.descriptorType,
 			static_cast<uint32_t>(count)
 		};
+		poolSizes.emplace_back(poolSize);
 	}
 
 	vk::DescriptorPoolCreateFlags flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;

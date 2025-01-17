@@ -1,19 +1,12 @@
 #version 450
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
+layout(location = 0) in vec2 position;
+layout(location = 1) in vec4 colour;
 
-layout(binding = 0) uniform UniformBufferObject {
-	mat4 model;
-	mat4 view;
-	mat4 proj;
-} ubo;
-
-layout(location = 0) out vec3 FragNormal;
-layout(location = 1) out vec3 FragPos;
+layout(location = 0) out vec4 FragColour;
 
 void main() {
-	FragNormal = normal;
-	gl_Position = ubo.proj * ubo.view * ubo.model * vec4(position, 1.0);
-	FragPos = gl_Position.xyz;
+	FragColour = colour;
+	gl_Position = vec4(position, 0.0, 1.0);
+	gl_PointSize = 5.0f;
 }

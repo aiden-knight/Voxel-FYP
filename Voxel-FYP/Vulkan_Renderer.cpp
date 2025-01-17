@@ -11,29 +11,40 @@
 #include "GLFW_Window.h"
 #include "Structures.h"
 
+#include <random>
 #include <chrono>
 
-Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets) :
+Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, 
+	PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors) :
 	m_owner{owner},
 	m_deviceRef{device},
 	m_swapChainRef{swapChain},
 	m_renderPassRef{renderPass},
 	m_pipelineRef{pipeline},
 	m_descriptorSetsRef{descriptorSets},
-	m_commandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)}
+	m_computePipelineRef{ computePipeline },
+	m_computeDescriptorSetsRef{ computeDescriptors },
+	m_commandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)},
+	m_computeCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)}
 {
 	m_clearColour = { {0.0f, 0.0f, 0.0f, 1.0f} };
 
+	CreateComputeStorageBuffers(device, graphicsPool);
+
 	m_imageAvailableSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
 	m_renderFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_computeFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
 	m_inFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_computeInFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) 
 	{
 		// create sync objects
 		m_imageAvailableSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_renderFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
+		m_computeFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
 		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+		m_computeInFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
 
 		// create uniform buffer
 		CreateUniformBuffer(device);
@@ -54,9 +65,45 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		}} };
 
 		device->GetHandle().updateDescriptorSets(descriptorWrites, {});
+
+		std::vector<vk::DescriptorBufferInfo> storageBufferInfoLastFrame{ {{
+			m_computeStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT].GetHandle(),
+			0,
+			sizeof(Particle) * PARTICLE_COUNT
+		}} };
+
+		std::vector<vk::DescriptorBufferInfo> storageBufferInfoCurrentFrame{ {{
+			m_computeStorageBuffers[i].GetHandle(),
+			0,
+			sizeof(Particle) * PARTICLE_COUNT
+		}} };
+
+		std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {
+			{
+				m_computeDescriptorSetsRef->GetDesciptorSet(i),
+				0, 0, // dst binding and dst array element
+				vk::DescriptorType::eUniformBuffer,
+				{},
+				bufferInfo
+			},
+			{
+				m_computeDescriptorSetsRef->GetDesciptorSet(i),
+				1, 0,
+				vk::DescriptorType::eStorageBuffer,
+				{},
+				storageBufferInfoLastFrame
+			},
+			{
+				m_computeDescriptorSetsRef->GetDesciptorSet(i),
+				2, 0,
+				vk::DescriptorType::eStorageBuffer,
+				{},
+				storageBufferInfoCurrentFrame
+			}
+		} };
+		device->GetHandle().updateDescriptorSets(computeDescriptorWrites, {});
 	}
 
-	m_model.reset(new Vulkan_Model(device, graphicsPool, "armadillo2.obj"));
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -67,31 +114,48 @@ Vulkan_Renderer::~Vulkan_Renderer()
 
 void Vulkan_Renderer::DrawFrame() 
 {
-	std::array<vk::Fence, 1> fences{ m_inFlightFence[currentFrame]};
+	// compute pipeline pass
+	std::array<vk::Fence, 1> computeFences{ m_computeInFlightFence[m_currentFrame] };
+	{ auto discard = m_deviceRef->GetHandle().waitForFences(computeFences, vk::True, UINT64_MAX); }
+
+	m_deviceRef->GetHandle().resetFences(computeFences);
+	m_computeCommandBuffers[m_currentFrame].reset();
+	RecordComputeCommands();
+
+	UpdateUniforms(m_currentFrame);
+
+	// compute submit info
+	std::array<vk::Semaphore, 1> computeSignalSemaphores{ m_computeFinishedSemaphore[m_currentFrame] };
+	std::array<vk::CommandBuffer, 1> computeCommandBuffers{ m_computeCommandBuffers[m_currentFrame] };
+	std::array<vk::SubmitInfo, 1> computeSubmitInfo{ {{ {}, {}, computeCommandBuffers, computeSignalSemaphores}} };
+
+	m_deviceRef->GetQueue(GRAPHICS).submit(computeSubmitInfo, m_computeInFlightFence[m_currentFrame]);
+	
+	// graphics pipeline pass
+	std::array<vk::Fence, 1> fences{ m_inFlightFence[m_currentFrame] };
 	{ auto discard = m_deviceRef->GetHandle().waitForFences(fences, vk::True, UINT64_MAX); }
 
-	std::pair<vk::Result, uint32_t> ret = m_swapChainRef->GetHandle().acquireNextImage(UINT64_MAX, m_imageAvailableSemaphore[currentFrame]);
+	std::pair<vk::Result, uint32_t> ret = m_swapChainRef->GetHandle().acquireNextImage(UINT64_MAX, m_imageAvailableSemaphore[m_currentFrame]);
 	if (ret.first == vk::Result::eErrorOutOfDateKHR) {
 		m_owner->RecreateSwapChain();
 		return;
-	} else if (ret.first != vk::Result::eSuccess && ret.first != vk::Result::eSuboptimalKHR) {
+	}
+	else if (ret.first != vk::Result::eSuccess && ret.first != vk::Result::eSuboptimalKHR) {
 		throw std::runtime_error("failed to acquire swapchain image");
 	}
 
 	m_deviceRef->GetHandle().resetFences(fences);
-	m_commandBuffers[currentFrame].reset();
+	m_commandBuffers[m_currentFrame].reset();
 	RecordCommandBuffer(ret.second);
 
 	// submit info
-	std::array<vk::Semaphore, 1> waitSemaphores{ m_imageAvailableSemaphore[currentFrame] };
-	std::array<vk::PipelineStageFlags, 1> waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
-	std::array<vk::CommandBuffer, 1> commandBuffers{ m_commandBuffers[currentFrame] };
-	std::array<vk::Semaphore, 1> signalSemaphores{ m_renderFinishedSemaphore[currentFrame] };
-
-	UpdateUniforms(currentFrame);
+	std::vector<vk::Semaphore> waitSemaphores{ m_computeFinishedSemaphore[m_currentFrame], m_imageAvailableSemaphore[m_currentFrame] };
+	std::vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	std::array<vk::CommandBuffer, 1> commandBuffers{ m_commandBuffers[m_currentFrame] };
+	std::array<vk::Semaphore, 1> signalSemaphores{ m_renderFinishedSemaphore[m_currentFrame] };
 
 	std::array<vk::SubmitInfo, 1> submitInfo{ {{ waitSemaphores, waitStages, commandBuffers, signalSemaphores}} };
-	m_deviceRef->GetQueue(GRAPHICS).submit(submitInfo, m_inFlightFence[currentFrame]);
+	m_deviceRef->GetQueue(GRAPHICS).submit(submitInfo, m_inFlightFence[m_currentFrame]);
 
 	// present info
 	std::array<vk::SwapchainKHR, 1> swapchain{ m_swapChainRef->GetHandle() };
@@ -112,13 +176,27 @@ void Vulkan_Renderer::DrawFrame()
 	}
 
 	// move to next frame
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex) 
+void Vulkan_Renderer::RecordComputeCommands()
 {
 	vk::CommandBufferBeginInfo beginInfo{};
-	m_commandBuffers[currentFrame].begin(beginInfo);
+	m_computeCommandBuffers[m_currentFrame].begin(beginInfo);
+
+	m_computeCommandBuffers[m_currentFrame].bindPipeline(vk::PipelineBindPoint::eCompute, m_computePipelineRef->GetHandle());
+	const std::vector<vk::DescriptorSet> descriptorSets{ m_computeDescriptorSetsRef->GetDesciptorSet(m_currentFrame) };
+	m_computeCommandBuffers[m_currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_computePipelineRef->GetLayout(), 0, descriptorSets, {});
+
+	m_computeCommandBuffers[m_currentFrame].dispatch(PARTICLE_COUNT / 256, 1, 1);
+
+	m_computeCommandBuffers[m_currentFrame].end();
+}
+
+void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
+{
+	vk::CommandBufferBeginInfo beginInfo{};
+	m_commandBuffers[m_currentFrame].begin(beginInfo);
 
 	std::array<vk::ClearValue, 2> clearValues = { m_clearColour, {{1.0f, 0}} };
 
@@ -131,24 +209,27 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 		clearValues
 	};
 
-	m_commandBuffers[currentFrame].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-	m_commandBuffers[currentFrame].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetHandle());
+	m_commandBuffers[m_currentFrame].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+	m_commandBuffers[m_currentFrame].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetHandle());
 
 	std::array<vk::Viewport, 1> viewports{ {{
 		0.0f, 0.0f, static_cast<float>(renderArea.extent.width), static_cast<float>(renderArea.extent.height),// render area
 		0.0f, 1.0f // min and max depth
 	}} };
 	std::array<vk::Rect2D, 1> scissors{ renderArea };
-	m_commandBuffers[currentFrame].setViewport(0, viewports);
-	m_commandBuffers[currentFrame].setScissor(0, scissors);
+	m_commandBuffers[m_currentFrame].setViewport(0, viewports);
+	m_commandBuffers[m_currentFrame].setScissor(0, scissors);
 
-	const std::vector<vk::DescriptorSet> descriptorSets{ m_descriptorSetsRef->GetDesciptorSet(currentFrame) };
-	m_commandBuffers[currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetLayout(), 0, descriptorSets, {});
+	const std::vector<vk::DescriptorSet> descriptorSets{ m_descriptorSetsRef->GetDesciptorSet(m_currentFrame) };
+	m_commandBuffers[m_currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineRef->GetLayout(), 0, descriptorSets, {});
 
-	m_model->Draw(m_commandBuffers[currentFrame]);
+	std::array<vk::Buffer, 1> vertexBuffers{ m_computeStorageBuffers[m_currentFrame].GetHandle() };
+	std::array<vk::DeviceSize, 1> offsets{ 0 };
+	m_commandBuffers[m_currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
+	m_commandBuffers[m_currentFrame].draw(PARTICLE_COUNT, 1, 0, 0);
 
-	m_commandBuffers[currentFrame].endRenderPass();
-	m_commandBuffers[currentFrame].end();
+	m_commandBuffers[m_currentFrame].endRenderPass();
+	m_commandBuffers[m_currentFrame].end();
 }
 
 void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
@@ -163,20 +244,56 @@ void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
 	memory = buffer.MapMemory();
 }
 
-void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
+void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	std::random_device rand{};
+	std::mt19937_64 engine{rand()};
+	std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
 
 	auto extent = m_swapChainRef->GetImageExtent();
 
-	UniformBufferObject ubo{}; 
-	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 1.0f, 0.0f));
-	ubo.model = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f,0.1f,0.1f));
-	ubo.view = glm::lookAt(glm::vec3(0.0f, 10.0f, -35), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 100.0f);
-	ubo.proj[1][1] *= -1;
+	std::vector<Particle> particles{ PARTICLE_COUNT };
+	for (auto& particle : particles)
+	{
+		float r = 0.25f * sqrt(distribution(engine));
+		float theta = distribution(engine) * 2 * 3.14159265358979323846;
+		float x = r * cos(theta) * extent.width / static_cast<float>(extent.height);
+		float y = r * sin(theta);
+
+		particle.position = glm::vec2(x, y);
+		particle.velocity = glm::normalize(particle.position) * 0.00025f;
+		particle.colour = glm::vec4(distribution(engine), distribution(engine), distribution(engine), 1.0f);
+	}
+
+	vk::DeviceSize bufferSize = sizeof(Particle) * particles.size();
+
+	Vulkan_Buffer stagingBuffer{ device, bufferSize,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
+
+	stagingBuffer.FillBuffer(particles.data());
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		auto& buffer = m_computeStorageBuffers.emplace_back(device, bufferSize,
+			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer,
+			vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+		buffer.CopyFromBuffer(graphicsPool, stagingBuffer, bufferSize);
+	}
+	
+}
+
+void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
+{
+	static auto lastTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	
+	float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
+	lastTime = currentTime;
+
+	UniformBufferObject ubo{};
+	ubo.deltaTime = deltaTime;
 
 	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));
 }
