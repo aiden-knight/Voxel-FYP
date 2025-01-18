@@ -62,7 +62,7 @@ struct Particle
 };
 
 // Used for number of framebuffers etc
-constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 // Uniform buffer object for passing data to shader every frame (ideally once)
 struct UniformBufferObject {
