@@ -1,48 +1,46 @@
 #version 450
 
 layout (points) in;
-layout (triangle_strip) out;
-layout (max_vertices = 6) out;
+layout (triangle_strip, max_vertices = 6) out;
 
-uint width = 16;
-uint height = 12;
-vec2 offset = vec2(2.0/width, 2.0/height);
+layout (location = 0) in vec4 FragColourIn[];
+
+layout(location = 0) out vec4 FragColourOut;
+
+layout (binding = 0) uniform ParameterUBO {
+	mat4 view;
+	mat4 proj;
+	float deltaTime;
+} ubo;
+
+vec2 diff = vec2(0.25, 0.33) * 2;
+uint particleCount = 4096;
+
+vec2 extent = vec2(0.05, 0.05);
 vec2 vertices[] = {
-	vec2(0, 0), 
-	vec2(offset.x, 0),
-	vec2(offset.x,  offset.y),
-	vec2(0,  offset.y)
+	(ubo.view * ubo.proj * vec4(-extent.x/2, -extent.y/2, 0, 0)).xy, 
+	(ubo.view * ubo.proj * vec4( extent.x/2, -extent.y/2, 0, 0)).xy,
+	(ubo.view * ubo.proj * vec4( extent.x/2,  extent.y/2, 0, 0)).xy,
+	(ubo.view * ubo.proj * vec4(-extent.x/2,  extent.y/2, 0, 0)).xy
 };
 
-vec3 colours[] = {
-	vec3(1.0, 0.0, 0.0),
-	vec3(0.0, 1.0, 0.0),
-	vec3(0.0, 0.0, 1.0),
-	vec3(1.0, 1.0, 1.0)
-};
-
-layout(location = 0) out vec3 fragColour;
 
 void main() {
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[0], 0.0, 0.0);
-	fragColour = colours[0];
+	FragColourOut = FragColourIn[0];
+
+	gl_Position = (gl_in[0].gl_Position + vec4(vertices[0],0.0, 0.0));
 	EmitVertex();
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[2], 0.0, 0.0);
-	fragColour = colours[2];
+	gl_Position = (gl_in[0].gl_Position + vec4(vertices[1],0.0, 0.0));
 	EmitVertex();
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[1], 0.0, 0.0);
-	fragColour = colours[1];
+	gl_Position = (gl_in[0].gl_Position + vec4(vertices[2],0.0, 0.0));
 	EmitVertex();
 	EndPrimitive();
 
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[2], 0.0, 0.0);
-	fragColour = colours[2];
+	gl_Position = (gl_in[0].gl_Position + vec4(vertices[3],0.0, 0.0));
 	EmitVertex();
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[0], 0.0, 0.0);
-	fragColour = colours[0];
+	gl_Position = (gl_in[0].gl_Position + vec4(vertices[0],0.0, 0.0));
 	EmitVertex();
-	gl_Position = gl_in[0].gl_Position + vec4(vertices[3], 0.0, 0.0);
-	fragColour = colours[3];
+	gl_Position = (gl_in[0].gl_Position + vec4(vertices[2],0.0, 0.0));
 	EmitVertex();
 	EndPrimitive();
 }

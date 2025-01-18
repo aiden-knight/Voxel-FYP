@@ -39,12 +39,12 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
             vertShader,
             "main"
         },
-        //{
-        //    {},
-        //    vk::ShaderStageFlagBits::eGeometry,
-        //    geomShader,
-        //    "main"
-        //},
+        {
+            {},
+            vk::ShaderStageFlagBits::eGeometry,
+            geomShader,
+            "main"
+        },
         {
             {},
             vk::ShaderStageFlagBits::eFragment,

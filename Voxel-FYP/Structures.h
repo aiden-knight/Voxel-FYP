@@ -61,12 +61,12 @@ struct Particle
 	}
 };
 
-constexpr uint32_t PARTICLE_COUNT = 4096;
-
 // Used for number of framebuffers etc
-constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
 // Uniform buffer object for passing data to shader every frame (ideally once)
 struct UniformBufferObject {
+	glm::mat4 proj;
+	glm::mat4 view;
 	float deltaTime;
 };

@@ -32,7 +32,7 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 			0, // binding
 			vk::DescriptorType::eUniformBuffer,
 			1, // descripter count
-			vk::ShaderStageFlagBits::eVertex
+			vk::ShaderStageFlagBits::eGeometry | vk::ShaderStageFlagBits::eVertex
 		}
 	} };
 	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, graphicsDescriptors, MAX_FRAMES_IN_FLIGHT));

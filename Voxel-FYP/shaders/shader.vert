@@ -5,8 +5,13 @@ layout(location = 1) in vec4 colour;
 
 layout(location = 0) out vec4 FragColour;
 
+layout (binding = 0) uniform ParameterUBO {
+	mat4 view;
+	mat4 proj;
+	float deltaTime;
+} ubo;
+
 void main() {
 	FragColour = colour;
-	gl_Position = vec4(position, 0.0, 1.0);
-	gl_PointSize = 5.0f;
+	gl_Position = ubo.view * ubo.proj * vec4(position, 0.0, 1.0);
 }

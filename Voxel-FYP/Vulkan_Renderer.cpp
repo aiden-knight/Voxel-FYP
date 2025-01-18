@@ -14,6 +14,8 @@
 #include <random>
 #include <chrono>
 
+constexpr uint32_t PARTICLE_COUNT = 4096;
+
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, 
 	PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors) :
 	m_owner{owner},
@@ -260,8 +262,9 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 		float x = r * cos(theta) * extent.width / static_cast<float>(extent.height);
 		float y = r * sin(theta);
 
-		particle.position = glm::vec2(x, y);
-		particle.velocity = glm::normalize(particle.position) * 0.00025f;
+		particle.position = glm::vec2(x* 8, y * 8);
+		particle.velocity = glm::vec2(0);
+		//particle.velocity = glm::normalize(particle.position);
 		particle.colour = glm::vec4(distribution(engine), distribution(engine), distribution(engine), 1.0f);
 	}
 
@@ -292,7 +295,11 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
 	lastTime = currentTime;
 
+	vk::Extent2D extent = m_swapChainRef->GetImageExtent();
+
 	UniformBufferObject ubo{};
+	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 10.0f);
 	ubo.deltaTime = deltaTime;
 
 	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));
