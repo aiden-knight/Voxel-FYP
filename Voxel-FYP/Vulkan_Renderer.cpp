@@ -263,7 +263,7 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 		float y = r * sin(theta);
 
 		particle.position = glm::vec2(x* 8, y * 8);
-		particle.velocity = glm::vec2(0);
+		particle.velocity = glm::normalize(particle.position) * 0.005f;
 		//particle.velocity = glm::normalize(particle.position);
 		particle.colour = glm::vec4(distribution(engine), distribution(engine), distribution(engine), 1.0f);
 	}
