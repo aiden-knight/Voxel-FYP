@@ -7,6 +7,15 @@ Vulkan_Debugger::Vulkan_Debugger(InstancePtr instance) :
 
 }
 
+void Vulkan_Debugger::CheckVkResult(VkResult err)
+{
+	if (err == 0) return;
+
+	std::cout << ("Vulkan Error: VkResult = " + err) << std::endl;
+
+	if (err < 0) abort();
+}
+
 vk::DebugUtilsMessengerCreateInfoEXT Vulkan_Debugger::GetCreateInfo()
 {
 	vk::DebugUtilsMessageSeverityFlagsEXT severityFlags{

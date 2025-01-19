@@ -11,6 +11,7 @@ public:
 	const vk::raii::DescriptorSetLayout& GetLayout() const { return m_descriptorSetLayout; }
 
 	const vk::raii::DescriptorSet& GetDesciptorSet(uint32_t index);
+	const vk::raii::DescriptorPool& GetDesciptorPool() const { return m_descriptorPool; }
 private:
 	vk::raii::DescriptorSetLayout m_descriptorSetLayout;
 	vk::raii::DescriptorPool m_descriptorPool;

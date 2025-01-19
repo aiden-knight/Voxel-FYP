@@ -13,6 +13,9 @@
 #include "Structures.h"
 #include "GLFW_Window.h"
 
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
+
 Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_validationLayersEnabled(validationEnabled),
 	m_ctx{}
@@ -23,55 +26,31 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	m_surface.reset(new Vulkan_Surface(m_instance, m_window));
 	m_device.reset(new Vulkan_Device(m_instance, m_surface));
 
-	int width, height;
-	m_window->GetFramebufferSize(&width, &height);
-	m_swapChain.reset(new Vulkan_SwapChain(m_device, m_surface, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}, nullptr));
+	// graphics pipeline objects
+	InitialiseGraphics();
 
-	std::vector<vk::DescriptorSetLayoutBinding> graphicsDescriptors{ {
-		{
-			0, // binding
-			vk::DescriptorType::eUniformBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eGeometry | vk::ShaderStageFlagBits::eVertex
-		}
-	} };
-	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, graphicsDescriptors, MAX_FRAMES_IN_FLIGHT));
+	// compute pipeline objects
+	InitialiseCompute();
 
-	m_renderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat()));
-	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_descriptorSets, m_renderPass));
-	m_depthImage.reset(new Vulkan_Image(m_device, vk::Extent3D(m_swapChain->GetImageExtent(), 1), m_device->FindDepthFormat(),
-		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth));
-
-	std::vector<vk::DescriptorSetLayoutBinding> computeDescriptors{ {
-		{
-			0, // binding
-			vk::DescriptorType::eUniformBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eCompute
-		},
-		{
-			1, // binding
-			vk::DescriptorType::eStorageBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eCompute
-		},
-		{
-			2, // binding
-			vk::DescriptorType::eStorageBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eCompute
-		}
-	} };
-	m_computeDescriptors.reset(new Vulkan_DescriptorSets(m_device, computeDescriptors, MAX_FRAMES_IN_FLIGHT));
-	m_computePipeline.reset(new Vulkan_Pipeline(m_device, m_computeDescriptors, "shaders/shader.comp.spv"));
-
-	m_swapChain->CreateFramebuffers(m_device, m_renderPass, m_depthImage);
+	// command pool for rendering commands
 	m_graphicsPool.reset(new Vulkan_CommandPool(m_device, GRAPHICS));
-	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets, m_computePipeline, m_computeDescriptors));
+
+	// imgui initialisation
+	InitialiseImGUI();
+
+	// renderer
+	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_imGuiRenderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets, m_computePipeline, m_computeDescriptors));
 }
 
 Vulkan_Wrapper::~Vulkan_Wrapper()
 {
+	m_device->GetHandle().waitIdle();
+
+	ImGui_ImplVulkan_Shutdown();
+	m_window->ShutdownImGui();
+	ImGui::DestroyContext();
+	
+	(*m_device->GetHandle()).destroyDescriptorPool(m_imGuiDescriptorPool);
 }
 
 std::vector<const char*> Vulkan_Wrapper::GetValidationLayers() const
@@ -100,4 +79,96 @@ void Vulkan_Wrapper::RecreateSwapChain()
 		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth));
 
 	m_swapChain->CreateFramebuffers(m_device, m_renderPass, m_depthImage);
+	m_swapChain->CreateImGuiFramebuffers(m_device, m_imGuiRenderPass);
+}
+
+void Vulkan_Wrapper::InitialiseCompute()
+{
+	std::vector<vk::DescriptorSetLayoutBinding> computeDescriptors{ {
+		{
+			0, // binding
+			vk::DescriptorType::eUniformBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eCompute
+		},
+		{
+			1, // binding
+			vk::DescriptorType::eStorageBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eCompute
+		},
+		{
+			2, // binding
+			vk::DescriptorType::eStorageBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eCompute
+		}
+	} };
+	m_computeDescriptors.reset(new Vulkan_DescriptorSets(m_device, computeDescriptors, MAX_FRAMES_IN_FLIGHT));
+	m_computePipeline.reset(new Vulkan_Pipeline(m_device, m_computeDescriptors, "shaders/shader.comp.spv"));
+}
+
+void Vulkan_Wrapper::InitialiseGraphics()
+{
+	int width, height;
+	m_window->GetFramebufferSize(&width, &height);
+	m_swapChain.reset(new Vulkan_SwapChain(m_device, m_surface, { static_cast<uint32_t>(width), static_cast<uint32_t>(height) }, nullptr));
+
+	std::vector<vk::DescriptorSetLayoutBinding> graphicsDescriptors{ {
+		{
+			0, // binding
+			vk::DescriptorType::eUniformBuffer,
+			1, // descripter count
+			vk::ShaderStageFlagBits::eGeometry | vk::ShaderStageFlagBits::eVertex
+		}
+	} };
+	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, graphicsDescriptors, MAX_FRAMES_IN_FLIGHT));
+	m_depthImage.reset(new Vulkan_Image(m_device, vk::Extent3D(m_swapChain->GetImageExtent(), 1), m_device->FindDepthFormat(),
+		vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageAspectFlagBits::eDepth));
+	m_renderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat()));
+	m_pipeline.reset(new Vulkan_Pipeline(m_device, m_descriptorSets, m_renderPass));
+
+	m_swapChain->CreateFramebuffers(m_device, m_renderPass, m_depthImage);
+}
+
+void Vulkan_Wrapper::InitialiseImGUI()
+{
+	std::vector<vk::DescriptorPoolSize> poolSizes = { {{
+		vk::DescriptorType::eCombinedImageSampler, MAX_FRAMES_IN_FLIGHT
+	}} };
+
+	vk::DescriptorPoolCreateInfo poolInfo = {
+		vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+		MAX_FRAMES_IN_FLIGHT,
+		poolSizes
+	};
+	m_imGuiDescriptorPool = (*m_device->GetHandle()).createDescriptorPool(poolInfo);
+	m_imGuiRenderPass.reset(new Vulkan_RenderPass(m_device, m_swapChain->GetImageFormat(), true));
+	m_swapChain->CreateImGuiFramebuffers(m_device, m_imGuiRenderPass);
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	ImGui::StyleColorsDark();
+
+	m_window->InitImGui();
+
+	ImGui_ImplVulkan_InitInfo initInfo{};
+	initInfo.Instance = *m_instance->GetHandle();
+	m_device->FillImGui_InitInfo(initInfo);
+
+	initInfo.PipelineCache = VK_NULL_HANDLE; // optional
+	initInfo.DescriptorPool = m_imGuiDescriptorPool;
+	initInfo.RenderPass = *m_imGuiRenderPass->GetHandle();
+	initInfo.Subpass = 0; // optional
+	initInfo.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+	initInfo.ImageCount = MAX_FRAMES_IN_FLIGHT;
+	initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	initInfo.Allocator = nullptr; // optional
+	initInfo.CheckVkResultFn = m_debugMessenger->CheckVkResult;
+	ImGui_ImplVulkan_Init(&initInfo);
 }

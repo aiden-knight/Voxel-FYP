@@ -51,6 +51,25 @@ void Vulkan_SwapChain::CreateFramebuffers(DevicePtr device, RenderPassPtr render
 	}
 }
 
+void Vulkan_SwapChain::CreateImGuiFramebuffers(DevicePtr device, RenderPassPtr renderPass)
+{
+	m_imGuiFrameBuffers.reserve(m_imageViews.size());
+
+	for (const auto& imageView : m_imageViews)
+	{
+		std::vector<vk::ImageView> attachments = { imageView };
+
+		vk::FramebufferCreateInfo createInfo{
+			{}, // flags
+			renderPass->GetHandle(),
+			attachments,
+			m_imageExtent.width, m_imageExtent.height,
+			1 // layers
+		};
+		m_imGuiFrameBuffers.emplace_back(device->GetHandle().createFramebuffer(createInfo));
+	}
+}
+
 vk::SwapchainCreateInfoKHR Vulkan_SwapChain::GetCreateInfo(DevicePtr device, SurfacePtr surface, const Vulkan_SwapChain* oldSwapchain) const
 {
 	const SwapChainSupportDetails supportDetails = device->GetSwapChainSupportDetails();

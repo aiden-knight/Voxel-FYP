@@ -18,6 +18,8 @@ struct SwapChainSupportDetails
 	std::vector<vk::PresentModeKHR> presentModes;
 };
 
+struct ImGui_ImplVulkan_InitInfo;
+
 class Vulkan_Device
 {
 public:
@@ -42,6 +44,7 @@ public:
 	const SwapChainSupportDetails GetSwapChainSupportDetails() const { return m_swapChainSupportDetails; }
 	void ResetSwapChainSupportDetails(SurfacePtr surface);
 
+	void FillImGui_InitInfo(ImGui_ImplVulkan_InitInfo& initInfo);
 private:
 	struct QueueFamilyIndices
 	{

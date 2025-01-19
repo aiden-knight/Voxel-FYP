@@ -7,12 +7,13 @@
 class Vulkan_RenderPass 
 {
 public:
-	Vulkan_RenderPass(DevicePtr device, const vk::Format swapChainImageFormat);
+	Vulkan_RenderPass(DevicePtr device, const vk::Format swapChainImageFormat, bool imGui = false);
 
 	const vk::raii::RenderPass& GetHandle() const { return m_renderPass; }
 private:
 	vk::raii::RenderPass m_renderPass;
 
 	vk::raii::RenderPass CreateRenderPass(DevicePtr device, const vk::Format swapChainImageFormat);
+	vk::raii::RenderPass CreateImGuiRenderPass(DevicePtr device, const vk::Format swapChainImageFormat);
 };
 

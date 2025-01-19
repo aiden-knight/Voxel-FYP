@@ -16,7 +16,10 @@ public:
     const vk::Extent2D GetImageExtent() const { return m_imageExtent; }
 
     const vk::raii::Framebuffer& GetFramebuffer(uint32_t index) const { return m_frameBuffers[index]; }
+    const vk::raii::Framebuffer& GetImGuiFramebuffer(uint32_t index) const { return m_imGuiFrameBuffers[index]; }
+
     void CreateFramebuffers(DevicePtr device, RenderPassPtr renderPass, ImagePtr depthImage);
+    void CreateImGuiFramebuffers(DevicePtr device, RenderPassPtr renderPass);
 private:
     const vk::Extent2D m_imageExtent;
     const vk::Format m_imageFormat;
@@ -25,6 +28,7 @@ private:
     std::vector<vk::Image> m_images;
     std::vector<vk::raii::ImageView> m_imageViews;
     std::vector<vk::raii::Framebuffer> m_frameBuffers;
+    std::vector<vk::raii::Framebuffer> m_imGuiFrameBuffers;
 
 
     vk::SwapchainCreateInfoKHR GetCreateInfo(DevicePtr device, SurfacePtr surface, const Vulkan_SwapChain* oldSwapchain) const;

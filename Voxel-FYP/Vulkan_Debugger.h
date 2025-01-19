@@ -10,6 +10,8 @@ class Vulkan_Debugger
 public:
     Vulkan_Debugger(InstancePtr instance);
 
+    static void CheckVkResult(VkResult err);
+
 private:
     vk::raii::DebugUtilsMessengerEXT m_debugMessenger;
 

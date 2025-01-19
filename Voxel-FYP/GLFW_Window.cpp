@@ -48,6 +48,17 @@ std::vector<const char*> GLFW_Window::GetRequiredInstanceExtensions() const
 	return { extensions, extensions + count };
 }
 
+void GLFW_Window::InitImGui()
+{
+	constexpr bool installCallbacks = true; // installs the callbacks for mouse movement and such for imgui before forwarding to already implemented user callbacks
+	ImGui_ImplGlfw_InitForVulkan(m_windowHandle, installCallbacks);
+}
+
+void GLFW_Window::ShutdownImGui()
+{
+	ImGui_ImplGlfw_Shutdown();
+}
+
 void GLFW_Window::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	GLFW_Window* customWindow = reinterpret_cast<GLFW_Window*>(glfwGetWindowUserPointer(window));

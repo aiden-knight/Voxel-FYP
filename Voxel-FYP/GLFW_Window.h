@@ -15,6 +15,9 @@ public:
 	void GetFramebufferSize(int* width, int* height);
 	std::vector<const char*> GetRequiredInstanceExtensions() const;
 
+	void InitImGui();
+	void ShutdownImGui();
+
 	GLFWwindow* GetHandle() const { return m_windowHandle; }
 
 	bool resized;

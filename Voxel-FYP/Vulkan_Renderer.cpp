@@ -11,23 +11,29 @@
 #include "GLFW_Window.h"
 #include "Structures.h"
 
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
+
 #include <random>
 #include <chrono>
 
 constexpr uint32_t PARTICLE_COUNT = 4096;
 
-Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, 
+Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, RenderPassPtr imGuiRenderPass, SwapChainPtr swapChain,
 	PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors) :
 	m_owner{owner},
 	m_deviceRef{device},
 	m_swapChainRef{swapChain},
 	m_renderPassRef{renderPass},
+	m_imGuiRenderPassRef{imGuiRenderPass},
 	m_pipelineRef{pipeline},
 	m_descriptorSetsRef{descriptorSets},
 	m_computePipelineRef{ computePipeline },
 	m_computeDescriptorSetsRef{ computeDescriptors },
 	m_commandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)},
-	m_computeCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)}
+	m_computeCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)},
+	m_imguiCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)}
 {
 	m_clearColour = { {0.0f, 0.0f, 0.0f, 1.0f} };
 
@@ -110,12 +116,16 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 
 Vulkan_Renderer::~Vulkan_Renderer()
 {
-	// ensure all commands are completed before destroying renderer
-	m_deviceRef->GetHandle().waitIdle();
 }
 
 void Vulkan_Renderer::DrawFrame() 
 {
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	ImGui::ShowDemoWindow();
+	ImGui::Render();
+
 	// compute pipeline pass
 	std::array<vk::Fence, 1> computeFences{ m_computeInFlightFence[m_currentFrame] };
 	{ auto discard = m_deviceRef->GetHandle().waitForFences(computeFences, vk::True, UINT64_MAX); }
@@ -149,11 +159,14 @@ void Vulkan_Renderer::DrawFrame()
 	m_deviceRef->GetHandle().resetFences(fences);
 	m_commandBuffers[m_currentFrame].reset();
 	RecordCommandBuffer(ret.second);
+	
+	m_imguiCommandBuffers[m_currentFrame].reset();
+	RecordImGuiCommandBuffer(ret.second);
 
 	// submit info
 	std::vector<vk::Semaphore> waitSemaphores{ m_computeFinishedSemaphore[m_currentFrame], m_imageAvailableSemaphore[m_currentFrame] };
 	std::vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eColorAttachmentOutput };
-	std::array<vk::CommandBuffer, 1> commandBuffers{ m_commandBuffers[m_currentFrame] };
+	std::vector<vk::CommandBuffer> commandBuffers{ m_commandBuffers[m_currentFrame], m_imguiCommandBuffers[m_currentFrame] };
 	std::array<vk::Semaphore, 1> signalSemaphores{ m_renderFinishedSemaphore[m_currentFrame] };
 
 	std::array<vk::SubmitInfo, 1> submitInfo{ {{ waitSemaphores, waitStages, commandBuffers, signalSemaphores}} };
@@ -232,6 +245,28 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 
 	m_commandBuffers[m_currentFrame].endRenderPass();
 	m_commandBuffers[m_currentFrame].end();
+}
+
+void Vulkan_Renderer::RecordImGuiCommandBuffer(uint32_t imageIndex)
+{
+	vk::CommandBufferBeginInfo beginInfo{};
+	m_imguiCommandBuffers[m_currentFrame].begin(beginInfo);
+
+	std::array<vk::ClearValue, 1> clearValues = { m_clearColour };
+	vk::Rect2D renderArea{ {0,0}, m_swapChainRef->GetImageExtent() };
+	vk::RenderPassBeginInfo renderPassInfo{
+		m_imGuiRenderPassRef->GetHandle(),
+		m_swapChainRef->GetImGuiFramebuffer(imageIndex),// FRAMEBUFFER
+		renderArea, // RENDER AREA
+		clearValues
+	};
+
+	m_imguiCommandBuffers[m_currentFrame].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *m_imguiCommandBuffers[m_currentFrame]);
+	
+	m_imguiCommandBuffers[m_currentFrame].endRenderPass();
+	m_imguiCommandBuffers[m_currentFrame].end();
 }
 
 void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)

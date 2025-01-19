@@ -31,6 +31,7 @@ vk::raii::DescriptorSetLayout Vulkan_DescriptorSets::CreateDescriptorSetLayout(D
 vk::raii::DescriptorPool Vulkan_DescriptorSets::CreateDescriptorPool(DevicePtr device, const std::vector<vk::DescriptorSetLayoutBinding>& layouts, uint32_t count)
 {
 	std::vector<vk::DescriptorPoolSize> poolSizes;
+	uint32_t maxSets = count;
 	for(const auto& layout : layouts)
 	{
 		auto found = std::find_if(poolSizes.begin(), poolSizes.end(), [&layout](const vk::DescriptorPoolSize& toFind) {
@@ -48,6 +49,8 @@ vk::raii::DescriptorPool Vulkan_DescriptorSets::CreateDescriptorPool(DevicePtr d
 		else
 		{
 			found->descriptorCount += static_cast<uint32_t>(count);
+			if (found->descriptorCount > maxSets)
+				maxSets = found->descriptorCount;
 		}
 	}
 
@@ -55,7 +58,7 @@ vk::raii::DescriptorPool Vulkan_DescriptorSets::CreateDescriptorPool(DevicePtr d
 
 	vk::DescriptorPoolCreateInfo createInfo{
 		flags,
-		count, // max sets
+		maxSets, // max sets
 		poolSizes
 	};
 

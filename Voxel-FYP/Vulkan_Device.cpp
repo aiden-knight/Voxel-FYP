@@ -3,6 +3,9 @@
 #include "Vulkan_Instance.h"
 #include "Vulkan_Surface.h"
 
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
+
 #include <exception>
 #include <vector>
 #include <string>
@@ -67,6 +70,14 @@ vk::Format Vulkan_Device::FindSupportedFormat(const std::vector<vk::Format>& can
 void Vulkan_Device::ResetSwapChainSupportDetails(SurfacePtr surface)
 {
 	m_swapChainSupportDetails.capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(surface->GetHandle());
+}
+
+void Vulkan_Device::FillImGui_InitInfo(ImGui_ImplVulkan_InitInfo& initInfo)
+{
+	initInfo.PhysicalDevice = *m_physicalDevice;
+	initInfo.Device = *m_device;
+	initInfo.QueueFamily = GetQueueIndex(GRAPHICS);
+	initInfo.Queue = *GetQueue(GRAPHICS);
 }
 
 vk::raii::Device Vulkan_Device::CreateDevice() const

@@ -9,7 +9,7 @@ class Vulkan_Wrapper;
 class Vulkan_Renderer
 {
 public:
-	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, SwapChainPtr swapChain, 
+	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, RenderPassPtr imGuiRenderPass, SwapChainPtr swapChain, 
 		PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors);
 	~Vulkan_Renderer();
 
@@ -21,6 +21,7 @@ private:
 	Vulkan_Wrapper *const m_owner;
 	DevicePtr m_deviceRef;
 	RenderPassPtr m_renderPassRef;
+	RenderPassPtr m_imGuiRenderPassRef;
 	SwapChainPtr m_swapChainRef;
 	PipelinePtr m_pipelineRef;
 	DescriptorSetsPtr m_descriptorSetsRef;
@@ -30,6 +31,7 @@ private:
 
 	// for actual rendering
 	vk::raii::CommandBuffers m_commandBuffers;
+	vk::raii::CommandBuffers m_imguiCommandBuffers;
 	std::vector<vk::raii::Semaphore> m_imageAvailableSemaphore;
 	std::vector<vk::raii::Semaphore> m_renderFinishedSemaphore;
 	std::vector<vk::raii::Fence> m_inFlightFence;
@@ -48,6 +50,8 @@ private:
 
 	void RecordComputeCommands();
 	void RecordCommandBuffer(uint32_t imageIndex);
+	void RecordImGuiCommandBuffer(uint32_t imageIndex);
+
 	void CreateUniformBuffer(DevicePtr device);
 	void CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
 

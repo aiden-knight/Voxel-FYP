@@ -27,7 +27,7 @@ void main() {
 
 	Particle particleIn = particlesIn[index];
 
-	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * 15;
+	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * 50;
 	if(particlesOut[index].position.x > 2.64)
 	{
 		particlesOut[index].velocity = -abs(particleIn.velocity);
