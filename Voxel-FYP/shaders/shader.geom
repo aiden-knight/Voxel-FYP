@@ -18,29 +18,28 @@ uint particleCount = 4096;
 
 vec2 extent = vec2(0.05, 0.05);
 vec2 vertices[] = {
-	(ubo.view * ubo.proj * vec4(-extent.x/2, -extent.y/2, 0, 0)).xy, 
-	(ubo.view * ubo.proj * vec4( extent.x/2, -extent.y/2, 0, 0)).xy,
-	(ubo.view * ubo.proj * vec4( extent.x/2,  extent.y/2, 0, 0)).xy,
-	(ubo.view * ubo.proj * vec4(-extent.x/2,  extent.y/2, 0, 0)).xy
+	vec2(-extent.x/2, -extent.y/2), 
+	vec2( extent.x/2, -extent.y/2),
+	vec2( extent.x/2,  extent.y/2),
+	vec2(-extent.x/2,  extent.y/2)
 };
 
+void EmitVertexWithOffset(uint index);
 
 void main() {
-	FragColourOut = FragColourIn[0];
-
-	gl_Position = (gl_in[0].gl_Position + vec4(vertices[0],0.0, 0.0));
-	EmitVertex();
-	gl_Position = (gl_in[0].gl_Position + vec4(vertices[1],0.0, 0.0));
-	EmitVertex();
-	gl_Position = (gl_in[0].gl_Position + vec4(vertices[2],0.0, 0.0));
-	EmitVertex();
+	EmitVertexWithOffset(0);
+	EmitVertexWithOffset(1);
+	EmitVertexWithOffset(2);
 	EndPrimitive();
-
-	gl_Position = (gl_in[0].gl_Position + vec4(vertices[3],0.0, 0.0));
-	EmitVertex();
-	gl_Position = (gl_in[0].gl_Position + vec4(vertices[0],0.0, 0.0));
-	EmitVertex();
-	gl_Position = (gl_in[0].gl_Position + vec4(vertices[2],0.0, 0.0));
-	EmitVertex();
+	EmitVertexWithOffset(3);
+	EmitVertexWithOffset(0);
+	EmitVertexWithOffset(2);
 	EndPrimitive();
+}
+
+void EmitVertexWithOffset(uint index)
+{
+	gl_Position = ubo.view * ubo.proj * (gl_in[0].gl_Position + vec4(vertices[index],0.0, 0.0));
+	FragColourOut = FragColourIn[0]; // must set output again for every vertex emitted
+	EmitVertex();
 }
