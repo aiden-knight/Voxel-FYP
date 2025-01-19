@@ -1,8 +1,8 @@
 #version 450
 
 struct Particle {
-	vec2 position;
-	vec2 velocity;
+	vec4 position;
+	vec4 velocity;
 	vec4 colour;
 };
 
@@ -27,13 +27,26 @@ void main() {
 
 	Particle particleIn = particlesIn[index];
 
-	particlesOut[index].position = particleIn.position + particleIn.velocity.xy * ubo.deltaTime * 15;
-	if(particlesOut[index].position.x > 2 || particlesOut[index].position.x < -2)
+	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * 15;
+	if(particlesOut[index].position.x > 2.64)
 	{
-		particlesOut[index].velocity = -particleIn.velocity;
+		particlesOut[index].velocity = -abs(particleIn.velocity);
+	}
+	else if(particlesOut[index].position.x < -2.64)
+	{
+		particlesOut[index].velocity = abs(particleIn.velocity);
 	}
 	else
 	{
 		particlesOut[index].velocity = particleIn.velocity;
+	}
+
+	if(particlesOut[index].position.y > 2.5)
+	{
+		particlesOut[index].velocity.y = -abs(particlesOut[index].velocity.y);
+	}
+	else if(particlesOut[index].position.y < -2.5)
+	{
+		particlesOut[index].velocity.y = abs(particlesOut[index].velocity.y);
 	}
 }

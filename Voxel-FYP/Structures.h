@@ -38,8 +38,8 @@ struct Vertex
 
 struct Particle
 {
-	glm::vec2 position;
-	glm::vec2 velocity;
+	glm::vec4 position;
+	glm::vec4 velocity;
 	glm::vec4 colour;
 
 	static std::array<vk::VertexInputBindingDescription, 1> GetBindingDescription() {
@@ -52,9 +52,9 @@ struct Particle
 
 	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions() {
 		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions{ {
-				//	Location	Binding		Format aka how many bytes		Offset from vertex start
-				{	0,			0,			vk::Format::eR32G32Sfloat,		offsetof(Particle, position) },
-				{	1,			0,			vk::Format::eR32G32B32Sfloat,	offsetof(Particle, colour) }
+				//	Location	Binding		Format aka how many bytes			Offset from vertex start
+				{	0,			0,			vk::Format::eR32G32B32A32Sfloat,	offsetof(Particle, position) },
+				{	1,			0,			vk::Format::eR32G32B32A32Sfloat,	offsetof(Particle, colour) }
 			} };
 
 		return attributeDescriptions;
