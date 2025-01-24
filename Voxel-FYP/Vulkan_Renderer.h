@@ -32,6 +32,8 @@ private:
 	PipelinePtr m_computePipelineRef;
 	DescriptorSetsPtr m_computeDescriptorSetsRef;
 
+	CommandPoolPtr m_graphicsPoolRef;
+
 	// for actual rendering
 	vk::raii::CommandBuffers m_commandBuffers;
 	vk::raii::CommandBuffers m_imguiCommandBuffers;
@@ -57,11 +59,21 @@ private:
 
 	void CreateUniformBuffer(DevicePtr device);
 	void CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
+	void CreateFrameData(DevicePtr device);
+
+	void ClearRenderer(DevicePtr device);
+	void CreateRenderer(DevicePtr device, CommandPoolPtr graphicsPool);
 
 	void UpdateUniforms(uint32_t imageIndex);
 
 	bool m_runCompute = false;
-	glm::vec3 m_cameraPos = glm::vec3(0.0f, 5.0f, 4.5f);
-	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.8f, 0.0f);
+	float m_velocityMult = 50.0f;
+
+	glm::vec3 m_cameraPos = glm::vec3(0.0f, 3.5f, 7.0f);
+	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	
+	std::string m_modelString = "teapot";
+	float m_modelHalfExtent = 2;
+
 	void DrawImGui();
 };

@@ -32,6 +32,8 @@ namespace ObjectLoader
             throw std::runtime_error(warn + err);
 
         Mesh mesh{};
+        mesh.min = glm::vec3(std::numeric_limits<float>::max());
+        mesh.max = glm::vec3(std::numeric_limits<float>::min());
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
         for (const auto& shape : shapes) {
@@ -64,6 +66,11 @@ namespace ObjectLoader
 
                 if (uniqueVertices.count(vertex) == 0) {
                     uniqueVertices[vertex] = static_cast<uint32_t>(mesh.vertices.size());
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        mesh.max[i] = std::max(mesh.max[i], vertex.pos[i]);
+                        mesh.min[i] = std::min(mesh.min[i], vertex.pos[i]);
+                    }
                     mesh.vertices.push_back(vertex);
                 }
 

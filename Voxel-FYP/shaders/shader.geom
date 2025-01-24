@@ -60,7 +60,7 @@ void main() {
 void EmitVertexWithOffset(uint index, vec3 colourMult)
 {
 	gl_Position = ubo.view * ubo.proj * (gl_in[0].gl_Position + vec4(vertices[index], 0.0));
-	FragColourOut = FragColourIn[0] * vec4(colourMult, 1); // must set output again for every vertex emitted
+	FragColourOut = FragColourIn[0]; // must set output again for every vertex emitted
 	EmitVertex();
 }
 

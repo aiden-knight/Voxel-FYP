@@ -13,6 +13,7 @@
 #include "Structures.h"
 
 #include "imgui.h"
+#include "imgui_stdlib.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
 
@@ -35,84 +36,11 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 	m_computeDescriptorSetsRef{ computeDescriptors },
 	m_commandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)},
 	m_computeCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)},
-	m_imguiCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)}
+	m_imguiCommandBuffers{graphicsPool->CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT)},
+	m_graphicsPoolRef{graphicsPool}
 {
 	m_clearColour = { {0.0f, 0.0f, 0.0f, 1.0f} };
-
-	CreateComputeStorageBuffers(device, graphicsPool);
-
-	m_imageAvailableSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
-	m_renderFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
-	m_computeFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
-	m_inFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
-	m_computeInFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
-	m_uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) 
-	{
-		// create sync objects
-		m_imageAvailableSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
-		m_renderFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
-		m_computeFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
-		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-		m_computeInFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-
-		// create uniform buffer
-		CreateUniformBuffer(device);
-
-		// update descriptor set with uniform buffer
-		std::vector<vk::DescriptorBufferInfo> bufferInfo{ {{
-			m_uniformBuffers[i].first.GetHandle(),
-			0,
-			sizeof(UniformBufferObject)
-		}} };
-
-		std::vector<vk::WriteDescriptorSet> descriptorWrites{ {{
-			m_descriptorSetsRef->GetDesciptorSet(i),
-			0, 0, // dst binding and dst array element
-			vk::DescriptorType::eUniformBuffer,
-			{},
-			bufferInfo
-		}} };
-
-		device->GetHandle().updateDescriptorSets(descriptorWrites, {});
-
-		std::vector<vk::DescriptorBufferInfo> storageBufferInfoLastFrame{ {{
-			m_computeStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT].GetHandle(),
-			0,
-			sizeof(Particle) * g_mesh.vertices.size()
-		}} };
-
-		std::vector<vk::DescriptorBufferInfo> storageBufferInfoCurrentFrame{ {{
-			m_computeStorageBuffers[i].GetHandle(),
-			0,
-			sizeof(Particle) * g_mesh.vertices.size()
-		}} };
-
-		std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {
-			{
-				m_computeDescriptorSetsRef->GetDesciptorSet(i),
-				0, 0, // dst binding and dst array element
-				vk::DescriptorType::eUniformBuffer,
-				{},
-				bufferInfo
-			},
-			{
-				m_computeDescriptorSetsRef->GetDesciptorSet(i),
-				1, 0,
-				vk::DescriptorType::eStorageBuffer,
-				{},
-				storageBufferInfoLastFrame
-			},
-			{
-				m_computeDescriptorSetsRef->GetDesciptorSet(i),
-				2, 0,
-				vk::DescriptorType::eStorageBuffer,
-				{},
-				storageBufferInfoCurrentFrame
-			}
-		} };
-		device->GetHandle().updateDescriptorSets(computeDescriptorWrites, {});
-	}
+	CreateRenderer(device, graphicsPool);
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -310,8 +238,24 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	std::mt19937_64 engine{rand()};
 	std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
 
-	g_mesh = ObjectLoader::LoadMesh("stanford-bunny.obj");
+	g_mesh = ObjectLoader::LoadMesh("models\\" + m_modelString + ".obj");
 	auto extent = m_swapChainRef->GetImageExtent();
+
+	glm::vec4 offset = glm::vec4(0.0f);
+	float highestDiff = 0;
+	for (int i = 0; i < 3; ++i)
+	{
+		float avg = (g_mesh.max[i] + g_mesh.min[i]) / 2;
+		float diff = (g_mesh.max[i] - g_mesh.min[i]) / 2;
+
+		offset[i] = -avg;
+
+		if (diff > highestDiff)
+		{
+			highestDiff = diff;
+		}
+	}
+	float modelMult = m_modelHalfExtent / highestDiff;
 
 	std::vector<Particle> particles;
 	particles.reserve(g_mesh.vertices.size());
@@ -319,10 +263,12 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	{
 		Particle particle;
 
-		particle.position = glm::vec4(vertex.pos, 0.0f);
-		particle.position *= 15;
-		particle.velocity = glm::vec4(vertex.normal * 0.001f, 0.0f);
-		particle.colour = glm::vec4(vertex.normal, 1.0f);
+		particle.position = glm::vec4(vertex.pos, 0.0f) + offset;
+		particle.position *= modelMult;
+		particle.velocity = glm::vec4(glm::normalize(vertex.normal) * 0.01f, 0.0f);
+		particle.colour = glm::vec4(glm::normalize(vertex.normal), 1.0f);
+		particle.colour += 1;
+		particle.colour /= 2;
 		particles.push_back(particle);
 	}
 
@@ -342,7 +288,101 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 
 		buffer.CopyFromBuffer(graphicsPool, stagingBuffer, bufferSize);
 	}
-	
+}
+
+void Vulkan_Renderer::CreateFrameData(DevicePtr device)
+{
+	m_imageAvailableSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_computeFinishedSemaphore.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_inFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_computeInFlightFence.reserve(MAX_FRAMES_IN_FLIGHT);
+	m_uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		// create sync objects
+		m_imageAvailableSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
+		m_renderFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
+		m_computeFinishedSemaphore.emplace_back(device->GetHandle(), vk::SemaphoreCreateInfo());
+		m_inFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+		m_computeInFlightFence.emplace_back(device->GetHandle(), vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+
+		// create uniform buffer
+		CreateUniformBuffer(device);
+
+		// update descriptor set with uniform buffer
+		std::vector<vk::DescriptorBufferInfo> bufferInfo{ {{
+			m_uniformBuffers[i].first.GetHandle(),
+			0,
+			sizeof(UniformBufferObject)
+		}} };
+
+		std::vector<vk::WriteDescriptorSet> descriptorWrites{ {{
+			m_descriptorSetsRef->GetDesciptorSet(i),
+			0, 0, // dst binding and dst array element
+			vk::DescriptorType::eUniformBuffer,
+			{},
+			bufferInfo
+		}} };
+
+		m_deviceRef->GetHandle().updateDescriptorSets(descriptorWrites, {});
+
+		std::vector<vk::DescriptorBufferInfo> storageBufferInfoLastFrame{ {{
+			m_computeStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT].GetHandle(),
+			0,
+			sizeof(Particle) * g_mesh.vertices.size()
+		}} };
+
+		std::vector<vk::DescriptorBufferInfo> storageBufferInfoCurrentFrame{ {{
+			m_computeStorageBuffers[i].GetHandle(),
+			0,
+			sizeof(Particle) * g_mesh.vertices.size()
+		}} };
+
+		std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {
+			{
+				m_computeDescriptorSetsRef->GetDesciptorSet(i),
+				0, 0, // dst binding and dst array element
+				vk::DescriptorType::eUniformBuffer,
+				{},
+				bufferInfo
+			},
+			{
+				m_computeDescriptorSetsRef->GetDesciptorSet(i),
+				1, 0,
+				vk::DescriptorType::eStorageBuffer,
+				{},
+				storageBufferInfoLastFrame
+			},
+			{
+				m_computeDescriptorSetsRef->GetDesciptorSet(i),
+				2, 0,
+				vk::DescriptorType::eStorageBuffer,
+				{},
+				storageBufferInfoCurrentFrame
+			}
+		} };
+		device->GetHandle().updateDescriptorSets(computeDescriptorWrites, {});
+	}
+}
+
+void Vulkan_Renderer::ClearRenderer(DevicePtr device)
+{
+	device->GetHandle().waitIdle();
+
+	m_imageAvailableSemaphore.clear();
+	m_renderFinishedSemaphore.clear();
+	m_computeFinishedSemaphore.clear();
+	m_inFlightFence.clear();
+	m_computeInFlightFence.clear();
+	m_uniformBuffers.clear();
+	m_computeStorageBuffers.clear();
+}
+
+void Vulkan_Renderer::CreateRenderer(DevicePtr device, CommandPoolPtr graphicsPool)
+{
+	CreateComputeStorageBuffers(device, graphicsPool);
+	CreateFrameData(device);
 }
 
 void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
@@ -360,6 +400,7 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 50.0f);
 	ubo.proj[1][1] *= -1;
 	ubo.particleCount = g_mesh.vertices.size();
+	ubo.velocityMult = m_velocityMult;
 	ubo.deltaTime = deltaTime;
 
 	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));
@@ -372,6 +413,7 @@ void Vulkan_Renderer::DrawImGui()
 		ImGui::Begin("Voxel FYP");
 
 		ImGui::Checkbox("Run Compute", &m_runCompute);
+		ImGui::DragFloat("Velocity Mult", &m_velocityMult);
 
 		if (ImGui::CollapsingHeader("Camera Params"))
 		{
@@ -380,6 +422,20 @@ void Vulkan_Renderer::DrawImGui()
 			ImGui::DragFloat3("Camera Pos", &m_cameraPos[0], dragSpeed);
 			ImGui::DragFloat3("Camera Target", &m_cameraTarget[0], dragSpeed);
 		}
+
+		if (ImGui::CollapsingHeader("Model Params"))
+		{
+
+			ImGui::InputText("Model", &m_modelString);
+			ImGui::DragFloat("Target Half Extent", &m_modelHalfExtent, 0.1f, 0.0f, std::numeric_limits<float>::max());
+
+			if (ImGui::Button("Recreate Renderer"))
+			{
+				ClearRenderer(m_deviceRef);
+				CreateRenderer(m_deviceRef, m_graphicsPoolRef);
+			}
+		}
+		
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 

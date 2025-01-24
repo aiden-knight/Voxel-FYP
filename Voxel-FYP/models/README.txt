@@ -1,0 +1,1 @@
+Ensure model has normals generated

@@ -4,6 +4,8 @@
 
 struct Mesh
 {
+	glm::vec3 min;
+	glm::vec3 max;
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 };

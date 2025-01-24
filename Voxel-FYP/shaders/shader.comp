@@ -10,6 +10,7 @@ layout (binding = 0) uniform ParameterUBO {
 	mat4 view;
 	mat4 proj;
 	uint particleCount;
+	float velocityMult;
 	float deltaTime;
 } ubo;
 
@@ -29,7 +30,7 @@ void main() {
 
 	Particle particleIn = particlesIn[index];
 
-	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * 50;
+	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * ubo.velocityMult;
 	if(particlesOut[index].position.x > 2.64)
 	{
 		particlesOut[index].velocity = -abs(particleIn.velocity);

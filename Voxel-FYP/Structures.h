@@ -69,5 +69,6 @@ struct UniformBufferObject {
 	glm::mat4 proj;
 	glm::mat4 view;
 	unsigned int particleCount;
+	float velocityMult;
 	float deltaTime;
 };
