@@ -20,9 +20,6 @@
 #include <random>
 #include <chrono>
 
-constexpr uint32_t PARTICLE_COUNT = 4096;
-Mesh g_mesh;
-
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, RenderPassPtr imGuiRenderPass, SwapChainPtr swapChain,
 	PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors) :
 	m_owner{owner},
@@ -151,8 +148,8 @@ void Vulkan_Renderer::RecordComputeCommands()
 	const std::vector<vk::DescriptorSet> descriptorSets{ m_computeDescriptorSetsRef->GetDesciptorSet(m_currentFrame) };
 	m_computeCommandBuffers[m_currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_computePipelineRef->GetLayout(), 0, descriptorSets, {});
 
-	uint32_t dispatchCount = g_mesh.vertices.size() / 256;
-	if (g_mesh.vertices.size() % 256 != 0)
+	uint32_t dispatchCount = m_particleCount / 256;
+	if (m_particleCount % 256 != 0)
 		dispatchCount++;
 	m_computeCommandBuffers[m_currentFrame].dispatch(dispatchCount, 1, 1);
 
@@ -192,7 +189,7 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	std::array<vk::Buffer, 1> vertexBuffers{ m_computeStorageBuffers[m_currentFrame].GetHandle() };
 	std::array<vk::DeviceSize, 1> offsets{ 0 };
 	m_commandBuffers[m_currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
-	m_commandBuffers[m_currentFrame].draw(g_mesh.vertices.size(), 1, 0, 0);
+	m_commandBuffers[m_currentFrame].draw(m_particleCount, 1, 0, 0);
 
 	m_commandBuffers[m_currentFrame].endRenderPass();
 	m_commandBuffers[m_currentFrame].end();
@@ -238,15 +235,15 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	std::mt19937_64 engine{rand()};
 	std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
 
-	g_mesh = ObjectLoader::LoadMesh("models\\" + m_modelString + ".obj");
+	m_mesh = ObjectLoader::LoadMesh("models\\" + m_modelString + ".obj");
 	auto extent = m_swapChainRef->GetImageExtent();
 
 	glm::vec4 offset = glm::vec4(0.0f);
 	float highestDiff = 0;
 	for (int i = 0; i < 3; ++i)
 	{
-		float avg = (g_mesh.max[i] + g_mesh.min[i]) / 2;
-		float diff = (g_mesh.max[i] - g_mesh.min[i]) / 2;
+		float avg = (m_mesh.max[i] + m_mesh.min[i]) / 2;
+		float diff = (m_mesh.max[i] - m_mesh.min[i]) / 2;
 
 		offset[i] = -avg;
 
@@ -258,8 +255,36 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	float modelMult = m_modelHalfExtent / highestDiff;
 
 	std::vector<Particle> particles;
-	particles.reserve(g_mesh.vertices.size());
-	for (const auto& vertex : g_mesh.vertices)
+	//m_particleCount = std::pow(static_cast<uint64_t>(m_modelResolution), 3);
+	m_particleCount = m_mesh.vertices.size();
+	particles.reserve(m_particleCount);
+
+	/*float increment = (m_modelHalfExtent / m_modelResolution) * 2;
+	for (int z = 0; z < m_modelResolution; ++z)
+	{
+		for (int y = 0; y < m_modelResolution; ++y)
+		{
+			for (int x = 0; x < m_modelResolution; ++x)
+			{
+				Particle particle;
+				particle.position = glm::vec4(
+					x * increment - m_modelHalfExtent,
+					y * increment - m_modelHalfExtent,
+					z * increment - m_modelHalfExtent, 0.0f);
+
+				particle.velocity = particle.position;
+				particle.colour = glm::normalize(particle.position);
+				particle.colour += 1;
+				particle.colour /= 2;
+				if (glm::dot(particle.colour, particle.colour) < 0.1)
+					particle.colour = glm::vec4(0.3f);
+				particle.colour.w = 1.0f;
+				particles.push_back(particle);
+			}
+		}
+	}*/
+
+	for (const auto& vertex : m_mesh.vertices)
 	{
 		Particle particle;
 
@@ -330,13 +355,13 @@ void Vulkan_Renderer::CreateFrameData(DevicePtr device)
 		std::vector<vk::DescriptorBufferInfo> storageBufferInfoLastFrame{ {{
 			m_computeStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT].GetHandle(),
 			0,
-			sizeof(Particle) * g_mesh.vertices.size()
+			sizeof(Particle) * m_particleCount
 		}} };
 
 		std::vector<vk::DescriptorBufferInfo> storageBufferInfoCurrentFrame{ {{
 			m_computeStorageBuffers[i].GetHandle(),
 			0,
-			sizeof(Particle) * g_mesh.vertices.size()
+			sizeof(Particle) * m_particleCount
 		}} };
 
 		std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {
@@ -399,7 +424,7 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	ubo.view = glm::lookAt(m_cameraPos, m_cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 50.0f);
 	ubo.proj[1][1] *= -1;
-	ubo.particleCount = g_mesh.vertices.size();
+	ubo.particleCount = m_particleCount;
 	ubo.velocityMult = m_velocityMult;
 	ubo.deltaTime = deltaTime;
 
@@ -428,6 +453,7 @@ void Vulkan_Renderer::DrawImGui()
 
 			ImGui::InputText("Model", &m_modelString);
 			ImGui::DragFloat("Target Half Extent", &m_modelHalfExtent, 0.1f, 0.0f, std::numeric_limits<float>::max());
+			ImGui::DragInt("Resolution", &m_modelResolution, 1.0f, 0, std::numeric_limits<int>::max());
 
 			if (ImGui::Button("Recreate Renderer"))
 			{
@@ -435,7 +461,6 @@ void Vulkan_Renderer::DrawImGui()
 				CreateRenderer(m_deviceRef, m_graphicsPoolRef);
 			}
 		}
-		
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 

@@ -4,8 +4,7 @@
 #include <optional> 
 #include "Vulkan_FWD.h"
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
+#include "Mesh.h"
 
 class Vulkan_Wrapper;
 
@@ -49,6 +48,7 @@ private:
 	uint32_t m_currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
+	Mesh m_mesh;
 	std::unique_ptr<Vulkan_Model> m_model;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
 	std::vector<Vulkan_Buffer> m_computeStorageBuffers;
@@ -74,6 +74,8 @@ private:
 	
 	std::string m_modelString = "teapot";
 	float m_modelHalfExtent = 2;
+	int m_modelResolution = 10;
+	size_t m_particleCount;
 
 	void DrawImGui();
 };

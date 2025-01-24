@@ -31,25 +31,4 @@ void main() {
 	Particle particleIn = particlesIn[index];
 
 	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * ubo.velocityMult;
-	if(particlesOut[index].position.x > 2.64)
-	{
-		particlesOut[index].velocity = -abs(particleIn.velocity);
-	}
-	else if(particlesOut[index].position.x < -2.64)
-	{
-		particlesOut[index].velocity = abs(particleIn.velocity);
-	}
-	else
-	{
-		particlesOut[index].velocity = particleIn.velocity;
-	}
-
-	if(particlesOut[index].position.y > 2.5)
-	{
-		particlesOut[index].velocity.y = -abs(particlesOut[index].velocity.y);
-	}
-	else if(particlesOut[index].position.y < -2.5)
-	{
-		particlesOut[index].velocity.y = abs(particlesOut[index].velocity.y);
-	}
 }
