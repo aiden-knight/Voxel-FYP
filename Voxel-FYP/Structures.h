@@ -68,5 +68,6 @@ constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 struct UniformBufferObject {
 	glm::mat4 proj;
 	glm::mat4 view;
+	unsigned int particleCount;
 	float deltaTime;
 };

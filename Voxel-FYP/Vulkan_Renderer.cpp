@@ -8,6 +8,7 @@
 #include "Vulkan_Buffer.h"
 #include "Vulkan_Model.h"
 #include "Vulkan_DescriptorSets.h"
+#include "ObjectLoader.h"
 #include "GLFW_Window.h"
 #include "Structures.h"
 
@@ -19,6 +20,7 @@
 #include <chrono>
 
 constexpr uint32_t PARTICLE_COUNT = 4096;
+Mesh g_mesh;
 
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, RenderPassPtr imGuiRenderPass, SwapChainPtr swapChain,
 	PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors) :
@@ -77,13 +79,13 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		std::vector<vk::DescriptorBufferInfo> storageBufferInfoLastFrame{ {{
 			m_computeStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT].GetHandle(),
 			0,
-			sizeof(Particle) * PARTICLE_COUNT
+			sizeof(Particle) * g_mesh.vertices.size()
 		}} };
 
 		std::vector<vk::DescriptorBufferInfo> storageBufferInfoCurrentFrame{ {{
 			m_computeStorageBuffers[i].GetHandle(),
 			0,
-			sizeof(Particle) * PARTICLE_COUNT
+			sizeof(Particle) * g_mesh.vertices.size()
 		}} };
 
 		std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {
@@ -111,7 +113,6 @@ Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, 
 		} };
 		device->GetHandle().updateDescriptorSets(computeDescriptorWrites, {});
 	}
-
 }
 
 Vulkan_Renderer::~Vulkan_Renderer()
@@ -123,25 +124,33 @@ void Vulkan_Renderer::DrawFrame()
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
+
+	DrawImGui();
+
 	ImGui::Render();
 
 	// compute pipeline pass
-	std::array<vk::Fence, 1> computeFences{ m_computeInFlightFence[m_currentFrame] };
-	{ auto discard = m_deviceRef->GetHandle().waitForFences(computeFences, vk::True, UINT64_MAX); }
+	if (m_runCompute)
+	{
+		std::array<vk::Fence, 1> computeFences{ m_computeInFlightFence[m_currentFrame] };
+		{ auto discard = m_deviceRef->GetHandle().waitForFences(computeFences, vk::True, UINT64_MAX); }
 
-	m_deviceRef->GetHandle().resetFences(computeFences);
-	m_computeCommandBuffers[m_currentFrame].reset();
-	RecordComputeCommands();
+		m_deviceRef->GetHandle().resetFences(computeFences);
+		m_computeCommandBuffers[m_currentFrame].reset();
+		RecordComputeCommands();
+	}
 
 	UpdateUniforms(m_currentFrame);
 
-	// compute submit info
-	std::array<vk::Semaphore, 1> computeSignalSemaphores{ m_computeFinishedSemaphore[m_currentFrame] };
-	std::array<vk::CommandBuffer, 1> computeCommandBuffers{ m_computeCommandBuffers[m_currentFrame] };
-	std::array<vk::SubmitInfo, 1> computeSubmitInfo{ {{ {}, {}, computeCommandBuffers, computeSignalSemaphores}} };
+	if (m_runCompute)
+	{
+		// compute submit info
+		std::array<vk::Semaphore, 1> computeSignalSemaphores{ m_computeFinishedSemaphore[m_currentFrame] };
+		std::array<vk::CommandBuffer, 1> computeCommandBuffers{ m_computeCommandBuffers[m_currentFrame] };
+		std::array<vk::SubmitInfo, 1> computeSubmitInfo{ {{ {}, {}, computeCommandBuffers, computeSignalSemaphores}} };
 
-	m_deviceRef->GetQueue(GRAPHICS).submit(computeSubmitInfo, m_computeInFlightFence[m_currentFrame]);
+		m_deviceRef->GetQueue(GRAPHICS).submit(computeSubmitInfo, m_computeInFlightFence[m_currentFrame]);
+	}
 	
 	// graphics pipeline pass
 	std::array<vk::Fence, 1> fences{ m_inFlightFence[m_currentFrame] };
@@ -164,8 +173,19 @@ void Vulkan_Renderer::DrawFrame()
 	RecordImGuiCommandBuffer(ret.second);
 
 	// submit info
-	std::vector<vk::Semaphore> waitSemaphores{ m_computeFinishedSemaphore[m_currentFrame], m_imageAvailableSemaphore[m_currentFrame] };
-	std::vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	std::vector<vk::Semaphore> waitSemaphores;
+	std::vector<vk::PipelineStageFlags> waitStages;
+	if (m_runCompute)
+	{
+		waitSemaphores = { m_computeFinishedSemaphore[m_currentFrame], m_imageAvailableSemaphore[m_currentFrame] };
+		waitStages = { vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	}
+	else
+	{
+		waitSemaphores = { m_imageAvailableSemaphore[m_currentFrame] };
+		 waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	}
+	
 	std::vector<vk::CommandBuffer> commandBuffers{ m_commandBuffers[m_currentFrame], m_imguiCommandBuffers[m_currentFrame] };
 	std::array<vk::Semaphore, 1> signalSemaphores{ m_renderFinishedSemaphore[m_currentFrame] };
 
@@ -203,7 +223,10 @@ void Vulkan_Renderer::RecordComputeCommands()
 	const std::vector<vk::DescriptorSet> descriptorSets{ m_computeDescriptorSetsRef->GetDesciptorSet(m_currentFrame) };
 	m_computeCommandBuffers[m_currentFrame].bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_computePipelineRef->GetLayout(), 0, descriptorSets, {});
 
-	m_computeCommandBuffers[m_currentFrame].dispatch(PARTICLE_COUNT / 256, 1, 1);
+	uint32_t dispatchCount = g_mesh.vertices.size() / 256;
+	if (g_mesh.vertices.size() % 256 != 0)
+		dispatchCount++;
+	m_computeCommandBuffers[m_currentFrame].dispatch(dispatchCount, 1, 1);
 
 	m_computeCommandBuffers[m_currentFrame].end();
 }
@@ -241,7 +264,7 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	std::array<vk::Buffer, 1> vertexBuffers{ m_computeStorageBuffers[m_currentFrame].GetHandle() };
 	std::array<vk::DeviceSize, 1> offsets{ 0 };
 	m_commandBuffers[m_currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
-	m_commandBuffers[m_currentFrame].draw(PARTICLE_COUNT, 1, 0, 0);
+	m_commandBuffers[m_currentFrame].draw(g_mesh.vertices.size(), 1, 0, 0);
 
 	m_commandBuffers[m_currentFrame].endRenderPass();
 	m_commandBuffers[m_currentFrame].end();
@@ -287,23 +310,20 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	std::mt19937_64 engine{rand()};
 	std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
 
+	g_mesh = ObjectLoader::LoadMesh("stanford-bunny.obj");
 	auto extent = m_swapChainRef->GetImageExtent();
 
-	std::vector<Particle> particles{ PARTICLE_COUNT };
-	for (auto& particle : particles)
+	std::vector<Particle> particles;
+	particles.reserve(g_mesh.vertices.size());
+	for (const auto& vertex : g_mesh.vertices)
 	{
-		float r = 0.25f * sqrt(distribution(engine));
-		float theta = distribution(engine) * 2 * 3.14159265358979323846;
-		float x = r * cos(theta) * extent.width / static_cast<float>(extent.height);
-		float y = r * sin(theta);
-		float z = -x;
+		Particle particle;
 
-		particle.position = glm::vec4(x* 8, y * 8, z* 8, 0.0f);
-		glm::vec4 temp = particle.position;
-		temp.z = 0.0f;
-		particle.velocity = glm::normalize(temp) * 0.005f;
-		//particle.velocity = glm::normalize(particle.position);
-		particle.colour = glm::vec4(distribution(engine), distribution(engine), distribution(engine), 1.0f);
+		particle.position = glm::vec4(vertex.pos, 0.0f);
+		particle.position *= 15;
+		particle.velocity = glm::vec4(vertex.normal * 0.001f, 0.0f);
+		particle.colour = glm::vec4(vertex.normal, 1.0f);
+		particles.push_back(particle);
 	}
 
 	vk::DeviceSize bufferSize = sizeof(Particle) * particles.size();
@@ -336,10 +356,33 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	vk::Extent2D extent = m_swapChainRef->GetImageExtent();
 
 	UniformBufferObject ubo{};
-	ubo.view = glm::lookAt(glm::vec3(0.0f, 5.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 10.0f);
+	ubo.view = glm::lookAt(m_cameraPos, m_cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 50.0f);
 	ubo.proj[1][1] *= -1;
+	ubo.particleCount = g_mesh.vertices.size();
 	ubo.deltaTime = deltaTime;
 
 	std::memcpy(m_uniformBuffers[imageIndex].second, &ubo, sizeof(ubo));
+}
+
+void Vulkan_Renderer::DrawImGui()
+{
+	auto& io = ImGui::GetIO();
+	{
+		ImGui::Begin("Voxel FYP");
+
+		ImGui::Checkbox("Run Compute", &m_runCompute);
+
+		if (ImGui::CollapsingHeader("Camera Params"))
+		{
+			static float dragSpeed = 0.1f;
+			ImGui::InputFloat("Drag Speed", &dragSpeed);
+			ImGui::DragFloat3("Camera Pos", &m_cameraPos[0], dragSpeed);
+			ImGui::DragFloat3("Camera Target", &m_cameraTarget[0], dragSpeed);
+		}
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+		ImGui::End();
+	}
 }

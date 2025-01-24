@@ -4,6 +4,9 @@
 #include <optional> 
 #include "Vulkan_FWD.h"
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+
 class Vulkan_Wrapper;
 
 class Vulkan_Renderer
@@ -56,4 +59,9 @@ private:
 	void CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
 
 	void UpdateUniforms(uint32_t imageIndex);
+
+	bool m_runCompute = false;
+	glm::vec3 m_cameraPos = glm::vec3(0.0f, 5.0f, 4.5f);
+	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.8f, 0.0f);
+	void DrawImGui();
 };
