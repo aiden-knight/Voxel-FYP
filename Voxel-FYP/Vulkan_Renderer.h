@@ -69,14 +69,14 @@ private:
 	void UpdateUniforms(uint32_t imageIndex);
 
 	bool m_runCompute = false;
-	float m_velocityMult = 50.0f;
+	float m_velocityMult = 1.0f;
 
 	glm::vec3 m_cameraPos = glm::vec3(0.0f, 3.5f, 7.0f);
 	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 	
 	std::string m_modelString = "teapot";
 	float m_modelHalfExtent = 2;
-	int m_modelResolution = 10;
+	int m_modelResolution = 32;
 	float m_voxelHalfExtent = m_modelHalfExtent / m_modelResolution;
 	size_t m_particleCount;
 

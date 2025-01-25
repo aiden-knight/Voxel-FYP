@@ -293,6 +293,7 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	std::vector<Particle> particles;
 	m_voxelHalfExtent = m_modelHalfExtent / m_modelResolution;
 	float increment = m_voxelHalfExtent * 2;
+
 	for (int z = 0; z < m_modelResolution; ++z)
 	{
 		for (int y = 0; y < m_modelResolution; ++y)
@@ -331,23 +332,13 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 					if (glm::dot(particle.colour, particle.colour) < 0.1)
 						particle.colour = glm::vec4(0.3f);
 					particle.colour.w = 1.0f;
+
 					particles.push_back(particle);
 				}
 			}
 		}
 	}
 
-	/*for (const auto& vertex : m_mesh.vertices)
-	{
-		Particle particle;
-
-		particle.position = glm::vec4(vertex.pos, 0.0f);
-		particle.velocity = glm::vec4(glm::normalize(vertex.normal) * 0.01f, 0.0f);
-		particle.colour = glm::vec4(glm::normalize(vertex.normal), 1.0f);
-		particle.colour += 1;
-		particle.colour /= 2;
-		particles.push_back(particle);
-	}*/
 	m_particleCount = particles.size();
 
 	vk::DeviceSize bufferSize = sizeof(Particle) * particles.size();
@@ -492,7 +483,7 @@ void Vulkan_Renderer::DrawImGui()
 		ImGui::Begin("Voxel FYP");
 
 		ImGui::Checkbox("Run Compute", &m_runCompute);
-		ImGui::DragFloat("Velocity Mult", &m_velocityMult);
+		ImGui::DragFloat("Velocity Mult", &m_velocityMult, 0.1f);
 
 		if (ImGui::CollapsingHeader("Camera Params"))
 		{
