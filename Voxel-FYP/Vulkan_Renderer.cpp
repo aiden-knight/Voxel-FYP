@@ -61,13 +61,13 @@ void Vulkan_Renderer::DrawFrame()
 		std::array<vk::Fence, 1> computeFences{ m_computeInFlightFence[m_currentFrame] };
 		{ auto discard = m_deviceRef->GetHandle().waitForFences(computeFences, vk::True, UINT64_MAX); }
 
+		UpdateUniforms(m_currentFrame);
+
 		m_deviceRef->GetHandle().resetFences(computeFences);
 		m_computeCommandBuffers[m_currentFrame].reset();
 		RecordComputeCommands();
 	}
-
-	UpdateUniforms(m_currentFrame);
-
+	
 	if (m_runCompute)
 	{
 		// compute submit info
@@ -89,6 +89,11 @@ void Vulkan_Renderer::DrawFrame()
 	}
 	else if (ret.first != vk::Result::eSuccess && ret.first != vk::Result::eSuboptimalKHR) {
 		throw std::runtime_error("failed to acquire swapchain image");
+	}
+
+	if (!m_runCompute)
+	{
+		UpdateUniforms(m_currentFrame);
 	}
 
 	m_deviceRef->GetHandle().resetFences(fences);
