@@ -18,6 +18,7 @@
 #include "imgui_impl_glfw.h"
 
 #include <random>
+#include <iostream>
 #include <chrono>
 
 Vulkan_Renderer::Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, RenderPassPtr imGuiRenderPass, SwapChainPtr swapChain,
@@ -217,6 +218,31 @@ void Vulkan_Renderer::RecordImGuiCommandBuffer(uint32_t imageIndex)
 	m_imguiCommandBuffers[m_currentFrame].end();
 }
 
+void Vulkan_Renderer::CentreMesh(Mesh& mesh)
+{
+	glm::vec3 offset = glm::vec3(0.0f);
+	float highestDiff = 0;
+	for (int i = 0; i < 3; ++i)
+	{
+		float avg = (mesh.max[i] + mesh.min[i]) / 2;
+		float diff = (mesh.max[i] - mesh.min[i]) / 2;
+
+		offset[i] = -avg;
+
+		if (diff > highestDiff)
+		{
+			highestDiff = diff;
+		}
+	}
+
+	float modelMult = m_modelHalfExtent / highestDiff;
+	for (auto& vertex : mesh.vertices)
+	{
+		vertex.pos += offset;
+		vertex.pos *= modelMult;
+	}
+}
+
 void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
 {
 	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -229,6 +255,31 @@ void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
 	memory = buffer.MapMemory();
 }
 
+static float ATAN2(float y, float x)
+{
+	static const float pi = glm::pi<float>();
+	static const float halfPi = glm::pi<float>() / 2.0f;
+
+	if (x > 0.0f)
+		return glm::atan(y / x);
+	else if (x < 0.0f)
+	{
+		if (y < 0.0f)
+			return glm::atan(y / x) - pi;
+		else // y is greater than or equal to 0
+			return glm::atan(y / x) + pi;
+	}
+	else // x equal to 0
+	{
+		if (y < 0.0f)
+			return -halfPi;
+		else if (y > 0.0f)
+			return halfPi;
+		else // y equal to 0
+			return 0.0f;
+	}
+}
+
 void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool)
 {
 	std::random_device rand{};
@@ -236,66 +287,68 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
 
 	m_mesh = ObjectLoader::LoadMesh("models\\" + m_modelString + ".obj");
+	CentreMesh(m_mesh);
 	auto extent = m_swapChainRef->GetImageExtent();
 
-	glm::vec4 offset = glm::vec4(0.0f);
-	float highestDiff = 0;
-	for (int i = 0; i < 3; ++i)
-	{
-		float avg = (m_mesh.max[i] + m_mesh.min[i]) / 2;
-		float diff = (m_mesh.max[i] - m_mesh.min[i]) / 2;
-
-		offset[i] = -avg;
-
-		if (diff > highestDiff)
-		{
-			highestDiff = diff;
-		}
-	}
-	float modelMult = m_modelHalfExtent / highestDiff;
-
 	std::vector<Particle> particles;
-	//m_particleCount = std::pow(static_cast<uint64_t>(m_modelResolution), 3);
-	m_particleCount = m_mesh.vertices.size();
-	particles.reserve(m_particleCount);
-
-	/*float increment = (m_modelHalfExtent / m_modelResolution) * 2;
+	m_voxelHalfExtent = m_modelHalfExtent / m_modelResolution;
+	float increment = m_voxelHalfExtent * 2;
 	for (int z = 0; z < m_modelResolution; ++z)
 	{
 		for (int y = 0; y < m_modelResolution; ++y)
 		{
 			for (int x = 0; x < m_modelResolution; ++x)
 			{
-				Particle particle;
-				particle.position = glm::vec4(
+				float occupancy = 0;
+				glm::vec3 position{
 					x * increment - m_modelHalfExtent,
 					y * increment - m_modelHalfExtent,
-					z * increment - m_modelHalfExtent, 0.0f);
+					z * increment - m_modelHalfExtent
+				};
 
-				particle.velocity = particle.position;
-				particle.colour = glm::normalize(particle.position);
-				particle.colour += 1;
-				particle.colour /= 2;
-				if (glm::dot(particle.colour, particle.colour) < 0.1)
-					particle.colour = glm::vec4(0.3f);
-				particle.colour.w = 1.0f;
-				particles.push_back(particle);
+				for (size_t i = 0; i < m_mesh.indices.size(); i+=3)
+				{
+					glm::mat3 edges{ 0.0f };
+					for (size_t j = 0; j < 3; ++j)
+					{
+						glm::vec3 vertexPos = m_mesh.vertices[m_mesh.indices[i + j]].pos;
+						edges[j] = glm::normalize(vertexPos - position);
+					}
+
+					float alpha = glm::determinant(edges);
+					float beta = 1 + glm::dot(edges[0], edges[1]) + glm::dot(edges[1], edges[2]) + glm::dot(edges[2], edges[0]);
+					occupancy += ATAN2(alpha, beta);
+				}
+
+				if (occupancy >= 1.0f)
+				{
+					Particle particle;
+					particle.position = glm::vec4(position, 0.0f);
+					particle.velocity = particle.position;
+					particle.colour = glm::normalize(particle.position);
+					particle.colour += 1;
+					particle.colour /= 2;
+					if (glm::dot(particle.colour, particle.colour) < 0.1)
+						particle.colour = glm::vec4(0.3f);
+					particle.colour.w = 1.0f;
+					particles.push_back(particle);
+				}
 			}
 		}
-	}*/
+	}
 
-	for (const auto& vertex : m_mesh.vertices)
+	/*for (const auto& vertex : m_mesh.vertices)
 	{
 		Particle particle;
 
-		particle.position = glm::vec4(vertex.pos, 0.0f) + offset;
-		particle.position *= modelMult;
+		particle.position = glm::vec4(vertex.pos, 0.0f);
 		particle.velocity = glm::vec4(glm::normalize(vertex.normal) * 0.01f, 0.0f);
 		particle.colour = glm::vec4(glm::normalize(vertex.normal), 1.0f);
 		particle.colour += 1;
 		particle.colour /= 2;
 		particles.push_back(particle);
-	}
+	}*/
+	m_particleCount = particles.size();
 
 	vk::DeviceSize bufferSize = sizeof(Particle) * particles.size();
 
@@ -424,6 +477,7 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	ubo.view = glm::lookAt(m_cameraPos, m_cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 50.0f);
 	ubo.proj[1][1] *= -1;
+	ubo.halfExtent = m_voxelHalfExtent;
 	ubo.particleCount = m_particleCount;
 	ubo.velocityMult = m_velocityMult;
 	ubo.deltaTime = deltaTime;

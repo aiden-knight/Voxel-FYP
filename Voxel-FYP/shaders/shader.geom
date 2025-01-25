@@ -10,6 +10,9 @@ layout(location = 0) out vec4 FragColourOut;
 layout (binding = 0) uniform ParameterUBO {
 	mat4 view;
 	mat4 proj;
+	uint particleCount;
+	float halfExtent;
+	float velocityMult;
 	float deltaTime;
 } ubo;
 
@@ -18,14 +21,14 @@ uint particleCount = 4096;
 
 vec3 extent = vec3(0.05, 0.05, 0.05);
 vec3 vertices[] = {
-	vec3(-extent.x/2, -extent.y/2, -extent.z/2), // 0 {- - -}
-	vec3(-extent.x/2,  extent.y/2, -extent.z/2), // 1 {- + -}
-	vec3(-extent.x/2, -extent.y/2,  extent.z/2), // 2 {- - +}
-	vec3(-extent.x/2,  extent.y/2,  extent.z/2), // 3 {- + +}
-	vec3( extent.x/2, -extent.y/2, -extent.z/2), // 4 {+ - -}
-	vec3( extent.x/2,  extent.y/2, -extent.z/2), // 5 {+ + -}
-	vec3( extent.x/2, -extent.y/2,  extent.z/2), // 6 {+ - +}
-	vec3( extent.x/2,  extent.y/2,  extent.z/2)  // 7 {+ + +}
+	vec3(-ubo.halfExtent, -ubo.halfExtent, -ubo.halfExtent), // 0 {- - -}
+	vec3(-ubo.halfExtent,  ubo.halfExtent, -ubo.halfExtent), // 1 {- + -}
+	vec3(-ubo.halfExtent, -ubo.halfExtent,  ubo.halfExtent), // 2 {- - +}
+	vec3(-ubo.halfExtent,  ubo.halfExtent,  ubo.halfExtent), // 3 {- + +}
+	vec3( ubo.halfExtent, -ubo.halfExtent, -ubo.halfExtent), // 4 {+ - -}
+	vec3( ubo.halfExtent,  ubo.halfExtent, -ubo.halfExtent), // 5 {+ + -}
+	vec3( ubo.halfExtent, -ubo.halfExtent,  ubo.halfExtent), // 6 {+ - +}
+	vec3( ubo.halfExtent,  ubo.halfExtent,  ubo.halfExtent)  // 7 {+ + +}
 };
 
 void EmitVertexWithOffset(uint index, vec3 colourMult);

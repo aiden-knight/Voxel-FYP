@@ -9,6 +9,7 @@ layout (binding = 0) uniform ParameterUBO {
 	mat4 view;
 	mat4 proj;
 	uint particleCount;
+	float halfExtent;
 	float velocityMult;
 	float deltaTime;
 } ubo;

@@ -57,6 +57,8 @@ private:
 	void RecordCommandBuffer(uint32_t imageIndex);
 	void RecordImGuiCommandBuffer(uint32_t imageIndex);
 
+	void CentreMesh(Mesh& mesh);
+
 	void CreateUniformBuffer(DevicePtr device);
 	void CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
 	void CreateFrameData(DevicePtr device);
@@ -75,6 +77,7 @@ private:
 	std::string m_modelString = "teapot";
 	float m_modelHalfExtent = 2;
 	int m_modelResolution = 10;
+	float m_voxelHalfExtent = m_modelHalfExtent / m_modelResolution;
 	size_t m_particleCount;
 
 	void DrawImGui();
