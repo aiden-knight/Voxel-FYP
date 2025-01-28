@@ -331,11 +331,16 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 					Particle particle;
 					particle.position = glm::vec4(position, 0.0f);
 					particle.velocity = particle.position;
-					particle.colour = glm::normalize(particle.position);
-					particle.colour += 1;
-					particle.colour /= 2;
-					if (glm::dot(particle.colour, particle.colour) < 0.1)
+					if(particle.position == glm::vec4(0.0f))
 						particle.colour = glm::vec4(0.3f);
+					else
+					{
+						particle.colour = glm::normalize(particle.position);
+						particle.colour += 1;
+						particle.colour /= 2;
+						if (glm::dot(particle.colour, particle.colour) < 0.1)
+							particle.colour = glm::vec4(0.3f);
+					}
 					particle.colour.w = 1.0f;
 
 					particles.push_back(particle);
