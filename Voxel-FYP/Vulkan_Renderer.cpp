@@ -262,31 +262,6 @@ void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
 	memory = buffer.MapMemory();
 }
 
-static float ATAN2(float y, float x)
-{
-	static const float pi = glm::pi<float>();
-	static const float halfPi = glm::pi<float>() / 2.0f;
-
-	if (x > 0.0f)
-		return glm::atan(y / x);
-	else if (x < 0.0f)
-	{
-		if (y < 0.0f)
-			return glm::atan(y / x) - pi;
-		else // y is greater than or equal to 0
-			return glm::atan(y / x) + pi;
-	}
-	else // x equal to 0
-	{
-		if (y < 0.0f)
-			return -halfPi;
-		else if (y > 0.0f)
-			return halfPi;
-		else // y equal to 0
-			return 0.0f;
-	}
-}
-
 void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool)
 {
 	m_mesh = ObjectLoader::LoadMesh("models\\" + m_modelString + ".obj");
@@ -304,11 +279,17 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
 		auto& buffer = m_computeStorageBuffers.emplace_back(device, bufferSize,
-			vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer,
+			vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
 			vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
 
 	Voxeliser voxeliser{ device, graphicsPool, &m_computeStorageBuffers[0], m_mesh, voxelUniform };
+	voxeliser.Voxelise(device, m_modelResolution);
+
+	for (int i = 1; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		m_computeStorageBuffers[i].CopyFromBuffer(graphicsPool, m_computeStorageBuffers[0], bufferSize);
+	}
 }
 
 void Vulkan_Renderer::CreateFrameData(DevicePtr device)

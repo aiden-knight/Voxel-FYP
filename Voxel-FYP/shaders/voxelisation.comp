@@ -29,7 +29,7 @@ layout(std140, binding = 3) buffer ParticleSSBOOut {
 	Particle particlesOut[ ];
 };
 
-layout (local_size_x = 32, local_size_y = 32, local_size_z = 32) in;
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 float voxelHalfExtent = ubo.halfExtent / ubo.voxelResolution;
 float increment = voxelHalfExtent * 2;
@@ -72,7 +72,7 @@ void main() {
 	
 	float occupancy = 0;
 
-	for(uint i = 0; i < ubo.indexCount; ++i)
+	for(uint i = 0; i < ubo.indexCount; i += 3)
 	{
 		mat3 edges;
 		for(uint j = 0; j < 3; ++j)

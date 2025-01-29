@@ -26,7 +26,8 @@ std::unique_ptr<Vulkan_Buffer> CreateSingleBuffer(DevicePtr device, CommandPoolP
 	return buffer;
 }
 
-Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffer* particlesOut, const Mesh& mesh, const VoxelisationUniform& voxelisationInfo)
+Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffer* particlesOut, const Mesh& mesh, const VoxelisationUniform& voxelisationInfo) :
+	m_commandBuffer{std::move(transferPool->CreateCommandBuffers(1).front())}
 {
 	std::vector<vk::DescriptorSetLayoutBinding> voxelisationDescriptors{ {
 		{
@@ -87,7 +88,7 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 	std::vector<vk::DescriptorBufferInfo> particleBuffer{ {{
 		particlesOut->GetHandle(),
 		0,
-		sizeof(Particle) * std::pow(voxelisationInfo.voxelResolution,3)
+		sizeof(Particle) * voxelisationInfo.voxelResolution * voxelisationInfo.voxelResolution * voxelisationInfo.voxelResolution
 	}} };
 
 	std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {
@@ -127,4 +128,27 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 Voxeliser::~Voxeliser()
 {
 
+}
+
+void Voxeliser::Voxelise(DevicePtr device, size_t resolution)
+{
+	m_commandBuffer.reset();
+
+	vk::CommandBufferBeginInfo beginInfo{};
+	m_commandBuffer.begin(beginInfo);
+
+	m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetHandle());
+	const std::vector<vk::DescriptorSet> descriptorSets{ m_voxelisationDescriptors->GetDesciptorSet(0) };
+	m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetLayout(), 0, descriptorSets, {});
+
+	uint32_t dispatchCount = resolution / 8;
+	m_commandBuffer.dispatch(dispatchCount, dispatchCount, dispatchCount);
+
+	m_commandBuffer.end();
+
+
+	std::array<vk::CommandBuffer, 1> commandBuffers{ m_commandBuffer };
+	std::array<vk::SubmitInfo, 1> submitInfo{ {{ {}, {}, commandBuffers, {}}} };
+	device->GetQueue(GRAPHICS).submit(submitInfo);
+	device->GetHandle().waitIdle();
 }

@@ -35,6 +35,8 @@ void EmitVertexWithOffset(uint index, vec3 colourMult);
 void EmitPrimitive(uint a, uint b, uint c, vec3 colourMult);
 
 void main() {
+	if(FragColourIn[0].w == 0.0)
+		return;	
 	// TOP
 	EmitPrimitive(5, 1, 3, vec3(1, 1, 1));
 	EmitPrimitive(7, 5, 3, vec3(1, 1, 1));
