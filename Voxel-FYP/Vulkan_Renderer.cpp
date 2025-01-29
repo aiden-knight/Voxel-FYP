@@ -8,6 +8,8 @@
 #include "Vulkan_Buffer.h"
 #include "Vulkan_Model.h"
 #include "Vulkan_DescriptorSets.h"
+
+#include "Voxeliser.h"
 #include "ObjectLoader.h"
 #include "GLFW_Window.h"
 #include "Structures.h"
@@ -287,86 +289,26 @@ static float ATAN2(float y, float x)
 
 void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool)
 {
-	std::random_device rand{};
-	std::mt19937_64 engine{rand()};
-	std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
-
 	m_mesh = ObjectLoader::LoadMesh("models\\" + m_modelString + ".obj");
 	CentreMesh(m_mesh);
-	auto extent = m_swapChainRef->GetImageExtent();
 
-	std::vector<Particle> particles;
 	m_voxelHalfExtent = m_modelHalfExtent / m_modelResolution;
-	float increment = m_voxelHalfExtent * 2;
+	m_particleCount = m_modelResolution * m_modelResolution * m_modelResolution;
 
-	for (int z = 0; z < m_modelResolution; ++z)
-	{
-		for (int y = 0; y < m_modelResolution; ++y)
-		{
-			for (int x = 0; x < m_modelResolution; ++x)
-			{
-				float occupancy = 0;
-				glm::vec3 position{
-					x * increment - m_modelHalfExtent,
-					y * increment - m_modelHalfExtent,
-					z * increment - m_modelHalfExtent
-				};
+	VoxelisationUniform voxelUniform;
+	voxelUniform.halfExtent = m_modelHalfExtent;
+	voxelUniform.voxelResolution = m_modelResolution;
+	voxelUniform.indexCount = m_mesh.indices.size();
 
-				for (size_t i = 0; i < m_mesh.indices.size(); i+=3)
-				{
-					glm::mat3 edges{ 0.0f };
-					for (size_t j = 0; j < 3; ++j)
-					{
-						glm::vec3 vertexPos = m_mesh.vertices[m_mesh.indices[i + j]].pos;
-						edges[j] = glm::normalize(vertexPos - position);
-					}
-
-					float alpha = glm::determinant(edges);
-					float beta = 1 + glm::dot(edges[0], edges[1]) + glm::dot(edges[1], edges[2]) + glm::dot(edges[2], edges[0]);
-					occupancy += ATAN2(alpha, beta);
-				}
-
-				if (occupancy >= 1.0f)
-				{
-					Particle particle;
-					particle.position = glm::vec4(position, 0.0f);
-					particle.velocity = particle.position;
-					if(particle.position == glm::vec4(0.0f))
-						particle.colour = glm::vec4(0.3f);
-					else
-					{
-						particle.colour = glm::normalize(particle.position);
-						particle.colour += 1;
-						particle.colour /= 2;
-						if (glm::dot(particle.colour, particle.colour) < 0.1)
-							particle.colour = glm::vec4(0.3f);
-					}
-					particle.colour.w = 1.0f;
-
-					particles.push_back(particle);
-				}
-			}
-		}
-	}
-
-	m_particleCount = particles.size();
-
-	vk::DeviceSize bufferSize = sizeof(Particle) * particles.size();
-
-	Vulkan_Buffer stagingBuffer{ device, bufferSize,
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
-
-	stagingBuffer.FillBuffer(particles.data());
-
+	vk::DeviceSize bufferSize = sizeof(Particle) * m_particleCount;
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
 		auto& buffer = m_computeStorageBuffers.emplace_back(device, bufferSize,
-			vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer,
+			vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer,
 			vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-		buffer.CopyFromBuffer(graphicsPool, stagingBuffer, bufferSize);
 	}
+
+	Voxeliser voxeliser{ device, graphicsPool, &m_computeStorageBuffers[0], m_mesh, voxelUniform };
 }
 
 void Vulkan_Renderer::CreateFrameData(DevicePtr device)

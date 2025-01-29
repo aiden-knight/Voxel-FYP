@@ -12,6 +12,7 @@
 #include "Vulkan_Image.h"
 #include "Structures.h"
 #include "GLFW_Window.h"
+#include "Voxeliser.h"
 
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"

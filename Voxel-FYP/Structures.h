@@ -9,8 +9,8 @@
 // Vertex format for use in vertex shader
 struct Vertex 
 {
-	glm::vec3 pos;
-	glm::vec3 normal;
+	alignas(16) glm::vec3 pos;
+	alignas(16) glm::vec3 normal;
 
 	static std::array<vk::VertexInputBindingDescription, 1> GetBindingDescription() {
 		vk::VertexInputBindingDescription bindingDesc{
@@ -72,4 +72,10 @@ struct UniformBufferObject {
 	float halfExtent;
 	float velocityMult;
 	float deltaTime;
+};
+
+struct VoxelisationUniform {
+	int voxelResolution;
+	float halfExtent;
+	unsigned int indexCount;
 };
