@@ -66,6 +66,13 @@ float ATAN2(float y, float x)
 }
 
 void main() {
+	if(gl_GlobalInvocationID.x >= ubo.voxelResolution)
+		return;
+	if(gl_GlobalInvocationID.y >= ubo.voxelResolution)
+		return;
+	if(gl_GlobalInvocationID.z >= ubo.voxelResolution)
+		return;
+
 	vec3 position = vec3(
 		gl_GlobalInvocationID.x * increment - ubo.halfExtent,
 		gl_GlobalInvocationID.y * increment - ubo.halfExtent,
@@ -75,7 +82,7 @@ void main() {
 	uint index = gl_GlobalInvocationID.x * ubo.voxelResolution * ubo.voxelResolution +
 		gl_GlobalInvocationID.y * ubo.voxelResolution +
 		gl_GlobalInvocationID.z;
-	
+
 	float occupancy = 0;
 
 	for(uint i = 0; i < ubo.indexCount/3; i++)

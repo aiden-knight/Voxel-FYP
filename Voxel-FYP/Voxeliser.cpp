@@ -151,6 +151,8 @@ void Voxeliser::Voxelise(DevicePtr device, CommandPoolPtr computePool, size_t re
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetLayout(), 0, descriptorSets, {});
 
 	uint32_t dispatchCount = resolution / 8;
+	if (resolution % 8 != 0)
+		dispatchCount++;
 	commandBuffer.dispatch(dispatchCount, dispatchCount, dispatchCount);
 
 	computePool->EndSingleTimeCommands(std::move(commandBuffer));
