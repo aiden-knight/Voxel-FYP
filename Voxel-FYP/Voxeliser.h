@@ -9,7 +9,7 @@ public:
 	Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffer* particlesOut, const Mesh& mesh, const VoxelisationUniform& voxelisationInfo);
 	~Voxeliser();
 
-	void Voxelise(DevicePtr device, size_t resolution);
+	void Voxelise(DevicePtr device, CommandPoolPtr computePool, size_t resolution);
 
 private:
 	std::unique_ptr<Vulkan_DescriptorSets> m_voxelisationDescriptors;
@@ -18,7 +18,5 @@ private:
 	std::unique_ptr<Vulkan_Buffer> m_voxelUBO;
 	std::unique_ptr<Vulkan_Buffer> m_vertices;
 	std::unique_ptr<Vulkan_Buffer> m_indices;
-
-	vk::raii::CommandBuffer m_commandBuffer;
 };
 

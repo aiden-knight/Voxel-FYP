@@ -284,7 +284,7 @@ void Vulkan_Renderer::CreateComputeStorageBuffers(DevicePtr device, CommandPoolP
 	}
 
 	Voxeliser voxeliser{ device, graphicsPool, &m_computeStorageBuffers[0], m_mesh, voxelUniform };
-	voxeliser.Voxelise(device, m_modelResolution);
+	voxeliser.Voxelise(device, graphicsPool, m_modelResolution);
 
 	for (int i = 1; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{

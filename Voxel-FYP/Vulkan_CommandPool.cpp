@@ -30,7 +30,7 @@ void Vulkan_CommandPool::EndSingleTimeCommands(vk::raii::CommandBuffer&& command
 
 	std::array<vk::SubmitInfo, 1> submitInfo{ {{
 		{},			// wait semaphore
-		{ nullptr },// wait dest stage
+		{},			// wait dest stage
 		buffer
 	}}};
 

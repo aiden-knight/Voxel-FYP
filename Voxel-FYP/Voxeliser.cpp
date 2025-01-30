@@ -26,8 +26,7 @@ std::unique_ptr<Vulkan_Buffer> CreateSingleBuffer(DevicePtr device, CommandPoolP
 	return buffer;
 }
 
-Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffer* particlesOut, const Mesh& mesh, const VoxelisationUniform& voxelisationInfo) :
-	m_commandBuffer{std::move(transferPool->CreateCommandBuffers(1).front())}
+Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffer* particlesOut, const Mesh& mesh, const VoxelisationUniform& voxelisationInfo)
 {
 	std::vector<vk::DescriptorSetLayoutBinding> voxelisationDescriptors{ {
 		{
@@ -56,10 +55,11 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 		}
 	} };
 
-	// create the compute pipeline
+	// creates the voxelisation compute pipeline
 	m_voxelisationDescriptors.reset(new Vulkan_DescriptorSets(device, voxelisationDescriptors, 1));
 	m_voxelisationPipeline.reset(new Vulkan_Pipeline(device, m_voxelisationDescriptors, "shaders/voxelisation.comp.spv"));
 
+	// have to store indices in an alignment that fits with the storage buffer
 	std::vector<Triangle> indices;
 	indices.reserve(mesh.indices.size() / 3);
 	for (int i = 0; i < mesh.indices.size(); i += 3)
@@ -78,7 +78,7 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 	m_vertices = CreateSingleBuffer(device, transferPool, mesh.vertices, vk::BufferUsageFlagBits::eStorageBuffer);
 	m_indices = CreateSingleBuffer(device, transferPool, indices, vk::BufferUsageFlagBits::eStorageBuffer);
 
-	// update descriptor set
+	// update descriptor sets with the data required for voxelisation
 	std::vector<vk::DescriptorBufferInfo> bufferInfo{ {{
 		m_voxelUBO->GetHandle(),
 		0,
@@ -142,25 +142,19 @@ Voxeliser::~Voxeliser()
 
 }
 
-void Voxeliser::Voxelise(DevicePtr device, size_t resolution)
+void Voxeliser::Voxelise(DevicePtr device, CommandPoolPtr computePool, size_t resolution)
 {
-	m_commandBuffer.reset();
+	auto commandBuffer = computePool->BeginSingleTimeCommands();
 
-	vk::CommandBufferBeginInfo beginInfo{};
-	m_commandBuffer.begin(beginInfo);
-
-	m_commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetHandle());
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetHandle());
 	const std::vector<vk::DescriptorSet> descriptorSets{ m_voxelisationDescriptors->GetDesciptorSet(0) };
-	m_commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetLayout(), 0, descriptorSets, {});
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, m_voxelisationPipeline->GetLayout(), 0, descriptorSets, {});
 
 	uint32_t dispatchCount = resolution / 8;
-	m_commandBuffer.dispatch(dispatchCount, dispatchCount, dispatchCount);
+	commandBuffer.dispatch(dispatchCount, dispatchCount, dispatchCount);
 
-	m_commandBuffer.end();
+	computePool->EndSingleTimeCommands(std::move(commandBuffer));
 
-
-	std::array<vk::CommandBuffer, 1> commandBuffers{ m_commandBuffer };
-	std::array<vk::SubmitInfo, 1> submitInfo{ {{ {}, {}, commandBuffers, {}}} };
-	device->GetQueue(GRAPHICS).submit(submitInfo);
+	// wait for  the voxelisation to be complete
 	device->GetHandle().waitIdle();
 }
