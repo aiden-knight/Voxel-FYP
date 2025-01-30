@@ -35,8 +35,9 @@ void EmitVertexWithOffset(uint index, vec3 colourMult);
 void EmitPrimitive(uint a, uint b, uint c, vec3 colourMult);
 
 void main() {
-	if(FragColourIn[0].w == 0.0)
+	if(gl_in[0].gl_Position.w < 1.0)
 		return;	
+
 	// TOP
 	EmitPrimitive(5, 1, 3, vec3(1, 1, 1));
 	EmitPrimitive(7, 5, 3, vec3(1, 1, 1));
@@ -64,7 +65,7 @@ void main() {
 
 void EmitVertexWithOffset(uint index, vec3 colourMult)
 {
-	gl_Position = ubo.view * ubo.proj * (gl_in[0].gl_Position + vec4(vertices[index], 0.0));
+	gl_Position = ubo.view * ubo.proj * (vec4(gl_in[0].gl_Position.xyz,1.0) + vec4(vertices[index], 0.0));
 	FragColourOut = FragColourIn[0]; // must set output again for every vertex emitted
 	EmitVertex();
 }

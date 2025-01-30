@@ -79,3 +79,9 @@ struct VoxelisationUniform {
 	float halfExtent;
 	unsigned int indexCount;
 };
+
+struct alignas(16) Triangle {
+	unsigned int first;
+	unsigned int second;
+	unsigned int third;
+};

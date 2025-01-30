@@ -11,6 +11,12 @@ struct Particle {
 	vec4 colour;
 };
 
+struct Triangle {
+	uint first;
+	uint second;
+	uint third;
+};
+
 layout (binding = 0) uniform ParameterUBO {
 	int voxelResolution;
 	float halfExtent;
@@ -22,7 +28,7 @@ layout(std140, binding = 1) readonly buffer VerticesIn {
 };
 
 layout(std140, binding = 2) readonly buffer IndicesIn {
-	uint indices[ ];
+	Triangle indices[ ];
 };
 
 layout(std140, binding = 3) buffer ParticleSSBOOut {
@@ -72,38 +78,31 @@ void main() {
 	
 	float occupancy = 0;
 
-	for(uint i = 0; i < ubo.indexCount; i += 3)
+	for(uint i = 0; i < ubo.indexCount/3; i++)
 	{
 		mat3 edges;
-		for(uint j = 0; j < 3; ++j)
-		{
-			vec3 vertexPos = vertices[indices[i + j]].position;
-			edges[j] = normalize(vertexPos);
-		}
+		
+		edges[0] = normalize(vertices[indices[i].first].position -  position);
+		edges[1] = normalize(vertices[indices[i].second].position -  position);
+		edges[2] = normalize(vertices[indices[i].third].position -  position);
 
 		float alpha = determinant(edges);
 		float beta = 1 + dot(edges[0], edges[1]) + dot(edges[1], edges[2]) + dot(edges[2], edges[0]);
 		occupancy += ATAN2(alpha, beta);
 	}
 
-	if(occupancy >= 1.0)
-	{
-		Particle particle;
-		particle.position = vec4(position, 0.0);
-		particle.velocity = particle.position;
+	Particle particle;
+	particle.position = vec4(position, 0.0);
+	particle.velocity = particle.position;
 
-		particle.colour = normalize(particle.position);
-		particle.colour += 1;
-		particle.colour /= 2;
-		if (dot(particle.colour, particle.colour) < 0.1)
-			particle.colour = vec4(0.3);
-		
-		particle.colour.w = 1.0;
+	particle.colour = normalize(particle.position);
+	particle.colour += 1;
+	particle.colour /= 2;
+	if (dot(particle.colour, particle.colour) < 0.1)
+		particle.colour = vec4(0.3);
+	
+	particle.colour.w = 1.0;
 
-		particlesOut[index] = particle;
-	}
-	else
-	{
-		particlesOut[index].colour = vec4(0.0);
-	}
+	particle.position.w = occupancy;
+	particlesOut[index] = particle;
 }

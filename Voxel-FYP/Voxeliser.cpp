@@ -60,11 +60,23 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 	m_voxelisationDescriptors.reset(new Vulkan_DescriptorSets(device, voxelisationDescriptors, 1));
 	m_voxelisationPipeline.reset(new Vulkan_Pipeline(device, m_voxelisationDescriptors, "shaders/voxelisation.comp.spv"));
 
+	std::vector<Triangle> indices;
+	indices.reserve(mesh.indices.size() / 3);
+	for (int i = 0; i < mesh.indices.size(); i += 3)
+	{
+		Triangle triangle{
+			mesh.indices[i],
+			mesh.indices[i + 1],
+			mesh.indices[i + 2]
+		};
+		indices.push_back(triangle);
+	}
+
 	// create uniform buffer
 	std::vector<VoxelisationUniform> voxelUbo = { voxelisationInfo };
 	m_voxelUBO = CreateSingleBuffer(device, transferPool, voxelUbo, vk::BufferUsageFlagBits::eUniformBuffer);
 	m_vertices = CreateSingleBuffer(device, transferPool, mesh.vertices, vk::BufferUsageFlagBits::eStorageBuffer);
-	m_indices = CreateSingleBuffer(device, transferPool, mesh.indices, vk::BufferUsageFlagBits::eStorageBuffer);
+	m_indices = CreateSingleBuffer(device, transferPool, indices, vk::BufferUsageFlagBits::eStorageBuffer);
 
 	// update descriptor set
 	std::vector<vk::DescriptorBufferInfo> bufferInfo{ {{
@@ -82,7 +94,7 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 	std::vector<vk::DescriptorBufferInfo> indicesBuffer{ {{
 		m_indices->GetHandle(),
 		0,
-		sizeof(uint32_t) * mesh.indices.size()
+		sizeof(Triangle) * indices.size()
 	}} };
 	
 	std::vector<vk::DescriptorBufferInfo> particleBuffer{ {{

@@ -16,5 +16,5 @@ layout (binding = 0) uniform ParameterUBO {
 
 void main() {
 	FragColour = colour;
-	gl_Position = vec4(position.xyz, 1.0);
+	gl_Position = position;
 }
