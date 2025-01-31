@@ -15,6 +15,9 @@ layout (binding = 0) uniform ParameterUBO {
 	float deltaTime;
 } ubo;
 
+uint totalCount = ubo.particleCount * ubo.particleCount * ubo.particleCount;
+float edge = ubo.halfExtent * ubo.particleCount;
+
 layout(std140, binding = 1) readonly buffer ParticleSSBOIn {
 	Particle particlesIn[ ];
 };
@@ -35,34 +38,21 @@ bool TestAABBs(vec4 lhs, vec4 rhs) {
 
 void main() {
 	uint index = gl_GlobalInvocationID.x;
-	if(index >= ubo.particleCount) return;
+	if(index >= totalCount) return;
 
 	Particle particleIn = particlesIn[index];
 
 	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * ubo.velocityMult;
 	particlesOut[index].velocity.y = particleIn.velocity.y - (1 * ubo.deltaTime * ubo.velocityMult);
 
-	// for(uint i = 0; i < ubo.particleCount; i++)
-	// {
-	// 	if(index == i) continue;
-
-	// 	if(TestAABBs(particlesIn[i].position, particlesOut[index].position))
-	// 	{
-	// 		float depth = particlesOut[index].position.y - particlesIn[i].position.y;
-	// 		vec3 relativeVelocity = particlesOut[index].velocity.xyz - particlesIn[i].velocity.xyz;
-
-	// 		particlesOut[index].position.y += depth;
-	// 		particlesOut[i].position.y -= depth;
-
-	// 		float vj = -(1.0 + 0.5) * (relativeVelocity.y);
-	// 		particlesOut[index].velocity.y += vj;
-	// 		particlesOut[i].velocity.y -= vj;
-	// 	}
-	// }
-
-	if(particlesOut[index].position.y <= -3.0)
+	if(particlesOut[index].position.y <= -edge)
 	{
-		particlesOut[index].position.y = -3.0;
+		particlesOut[index].position.y = -edge;
+		particlesOut[index].velocity.y *= -1.0;
+	}
+	else if(particlesOut[index].position.y >= edge)
+	{
+		particlesOut[index].position.y = edge;
 		particlesOut[index].velocity.y *= -1.0;
 	}
 }

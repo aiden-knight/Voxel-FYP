@@ -16,10 +16,6 @@ layout (binding = 0) uniform ParameterUBO {
 	float deltaTime;
 } ubo;
 
-vec2 diff = vec2(0.25, 0.33) * 2;
-uint particleCount = 4096;
-
-vec3 extent = vec3(0.05, 0.05, 0.05);
 vec3 vertices[] = {
 	vec3(-ubo.halfExtent, -ubo.halfExtent, -ubo.halfExtent), // 0 {- - -}
 	vec3(-ubo.halfExtent,  ubo.halfExtent, -ubo.halfExtent), // 1 {- + -}

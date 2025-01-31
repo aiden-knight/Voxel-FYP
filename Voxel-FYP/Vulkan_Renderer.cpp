@@ -402,7 +402,7 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 	ubo.proj = glm::perspective(glm::radians(45.0f), extent.width / static_cast<float>(extent.height), 0.1f, 50.0f);
 	ubo.proj[1][1] *= -1;
 	ubo.halfExtent = m_voxelHalfExtent;
-	ubo.particleCount = m_particleCount;
+	ubo.particleCount = m_modelResolution;
 	ubo.velocityMult = m_velocityMult;
 	ubo.deltaTime = deltaTime;
 
