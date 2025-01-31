@@ -44,7 +44,6 @@ private:
 	std::vector<vk::raii::Semaphore> m_computeFinishedSemaphore;
 	std::vector<vk::raii::Fence> m_computeInFlightFence;
 
-
 	uint32_t m_currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
