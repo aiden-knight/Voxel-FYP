@@ -415,7 +415,18 @@ void Vulkan_Renderer::DrawImGui()
 	{
 		ImGui::Begin("Voxel FYP");
 
-		ImGui::Checkbox("Run Compute", &m_runCompute);
+		if (ImGui::Checkbox("Run Compute", &m_runCompute) && !m_runCompute)
+		{
+			int lastUpdated = (m_currentFrame + MAX_FRAMES_IN_FLIGHT - 1) % MAX_FRAMES_IN_FLIGHT;
+			vk::DeviceSize bufferSize = sizeof(Particle) * m_particleCount;
+			for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+			{
+				if (i == lastUpdated) continue;
+				m_computeStorageBuffers[i].CopyFromBuffer(m_graphicsPoolRef, m_computeStorageBuffers[lastUpdated], bufferSize);
+			}
+			m_deviceRef->GetHandle().waitIdle();
+		}
+
 		ImGui::DragFloat("Velocity Mult", &m_velocityMult, 0.1f);
 
 		if (ImGui::CollapsingHeader("Camera Params"))
