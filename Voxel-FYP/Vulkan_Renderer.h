@@ -4,18 +4,21 @@
 #include <optional> 
 #include "Vulkan_FWD.h"
 
+#include "ImGuiConfig.h"
 #include "Mesh.h"
 
 class Vulkan_Wrapper;
+class Particle;
 
 class Vulkan_Renderer
 {
 public:
 	Vulkan_Renderer(Vulkan_Wrapper *const owner, DevicePtr device, RenderPassPtr renderPass, RenderPassPtr imGuiRenderPass, SwapChainPtr swapChain, 
-		PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets, PipelinePtr computePipeline, DescriptorSetsPtr computeDescriptors);
+		PipelinePtr pipeline, CommandPoolPtr graphicsPool, DescriptorSetsPtr descriptorSets);
 	~Vulkan_Renderer();
 
 	void DrawFrame();
+	std::vector<Particle>& GetParticleVector() { return m_voxelisation; }
 private:
 	using Buffer = std::unique_ptr<Vulkan_Buffer>;
 
@@ -28,9 +31,6 @@ private:
 	PipelinePtr m_pipelineRef;
 	DescriptorSetsPtr m_descriptorSetsRef;
 
-	PipelinePtr m_computePipelineRef;
-	DescriptorSetsPtr m_computeDescriptorSetsRef;
-
 	CommandPoolPtr m_graphicsPoolRef;
 
 	// for actual rendering
@@ -40,44 +40,31 @@ private:
 	std::vector<vk::raii::Semaphore> m_renderFinishedSemaphore;
 	std::vector<vk::raii::Fence> m_inFlightFence;
 
-	vk::raii::CommandBuffers m_computeCommandBuffers;
-	std::vector<vk::raii::Semaphore> m_computeFinishedSemaphore;
-	std::vector<vk::raii::Fence> m_computeInFlightFence;
-
 	uint32_t m_currentFrame = 0;
 	vk::ClearValue m_clearColour;
 
 	Mesh m_mesh;
 	std::unique_ptr<Vulkan_Model> m_model;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
-	std::vector<Vulkan_Buffer> m_computeStorageBuffers;
 
-	void RecordComputeCommands();
+	std::vector<Particle> m_voxelisation;
+	std::vector<std::pair<Vulkan_Buffer, void*>> m_vertexBuffers;
+
 	void RecordCommandBuffer(uint32_t imageIndex);
 	void RecordImGuiCommandBuffer(uint32_t imageIndex);
 
 	void CentreMesh(Mesh& mesh);
 
 	void CreateUniformBuffer(DevicePtr device);
-	void CreateComputeStorageBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
+	void CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr graphicsPool);
 	void CreateFrameData(DevicePtr device);
 
-	void ClearRenderer(DevicePtr device);
 	void CreateRenderer(DevicePtr device, CommandPoolPtr graphicsPool);
 
 	void UpdateUniforms(uint32_t imageIndex);
+	void UpdateVertexBuffer(uint32_t currentFrame);
 
-	bool m_runCompute = false;
-	float m_velocityMult = 1.0f;
-
-	glm::vec3 m_cameraPos = glm::vec3(0.0f, 3.5f, 7.0f);
-	glm::vec3 m_cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	
-	std::string m_modelString = "teapot";
-	float m_modelHalfExtent = 2;
-	int m_modelResolution = 32;
-	float m_voxelHalfExtent = m_modelHalfExtent / m_modelResolution;
-	size_t m_particleCount;
+	float m_voxelHalfExtent = ImGuiConfig::GetInstance()->modelHalfExtent / ImGuiConfig::GetInstance()->modelResolution;
 
 	void DrawImGui();
 };

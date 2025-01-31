@@ -147,7 +147,9 @@
     <ClCompile Include="..\includes\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\includes\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\includes\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="ImGuiConfig.cpp" />
     <ClCompile Include="ObjectLoader.cpp" />
+    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="Voxeliser.cpp" />
     <ClCompile Include="Vulkan_Buffer.cpp" />
     <ClCompile Include="Vulkan_CommandPool.cpp" />
@@ -168,8 +170,10 @@
     <ClCompile Include="GLFW_Wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImGuiConfig.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjectLoader.h" />
+    <ClInclude Include="Simulator.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Voxeliser.h" />
     <ClInclude Include="Vulkan_Buffer.h" />
