@@ -8,7 +8,7 @@
 #include "Mesh.h"
 
 class Vulkan_Wrapper;
-class Particle;
+struct Particle;
 
 class Vulkan_Renderer
 {

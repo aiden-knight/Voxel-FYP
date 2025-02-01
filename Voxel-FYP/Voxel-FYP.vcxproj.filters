@@ -111,6 +111,12 @@
     <ClCompile Include="Voxeliser.cpp">
       <Filter>Source Files\Vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="ImGuiConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Simulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFW_Wrapper.h">
@@ -175,6 +181,12 @@
     </ClInclude>
     <ClInclude Include="Voxeliser.h">
       <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Simulator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

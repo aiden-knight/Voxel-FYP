@@ -257,7 +257,8 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 		{
 			if (voxelisation->position.w >= 1.0f)
 			{
-				m_voxelisation.emplace_back(std::move(*voxelisation));
+				auto& particle = m_voxelisation.emplace_back(std::move(*voxelisation));
+				particle.position.w = m_voxelHalfExtent;
 			}
 			++voxelisation;
 		}
