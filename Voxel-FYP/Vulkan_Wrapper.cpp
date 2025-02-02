@@ -23,7 +23,8 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 {
 	m_window = window;
 	m_instance.reset(new Vulkan_Instance(this));
-	m_debugMessenger.reset(new Vulkan_Debugger(m_instance));
+	if(m_validationLayersEnabled)
+		m_debugMessenger.reset(new Vulkan_Debugger(m_instance));
 	m_surface.reset(new Vulkan_Surface(m_instance, m_window));
 	m_device.reset(new Vulkan_Device(m_instance, m_surface));
 

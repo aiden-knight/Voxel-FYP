@@ -23,7 +23,13 @@ int main()
 		GlfwWrapper glfw{};
 
 		std::unique_ptr<GLFW_Window> window = glfw.CreateWindow(800, 600, "VulkanFYP");
-		Vulkan_Wrapper vulkanWrapper{ window.get(), true };
+
+		bool validationEnabled = false;
+#ifndef NDEBUG
+		validationEnabled = true;
+#endif
+
+		Vulkan_Wrapper vulkanWrapper{ window.get(), validationEnabled };
 
 		RendererPtr renderer = vulkanWrapper.GetRenderer();
 		Simulator simulator{ renderer->GetVoxelisation() };
