@@ -61,12 +61,6 @@ struct Voxel
 	}
 };
 
-struct VoxelNode
-{
-	Voxel* data;
-	VoxelNode* pNext;
-};
-
 // Used for number of framebuffers etc
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 

@@ -46,7 +46,8 @@ void SpatialHash::TestCollisions()
 	{
 		for (auto it = vec.begin(); it != vec.end(); ++it)
 		{
-			for (auto jt = (it + 1); jt != vec.end(); ++jt)
+			auto jt = it;
+			for (++jt; jt != vec.end(); ++jt)
 			{
 				Simulator::TestCollision(**it, **jt);
 			}

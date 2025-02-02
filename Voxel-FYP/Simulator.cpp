@@ -3,10 +3,6 @@
 #include "Structures.h"
 #include <cmath>
 
-#include "SpatialHash.h"
-
-SpatialHash spatialHash;
-
 Simulator::Simulator(std::vector<Voxel>& particles) :
 	m_particleRef{particles}
 {
@@ -29,9 +25,13 @@ void Simulator::Update(float deltaTime)
 	deltaTime = 0.016f;
 	
 	ImGuiConfig* config = ImGuiConfig::GetInstance();
-	if (!config->simulate) return;
+	if (config->resetSimulator)
+	{
+		m_spatialHash.Clear();
+		config->resetSimulator = false;
+	}
 
-	spatialHash.Clear();
+	if (!config->simulate) return;
 
 	for (size_t i = 0; i < m_particleRef.size(); ++i)
 	{

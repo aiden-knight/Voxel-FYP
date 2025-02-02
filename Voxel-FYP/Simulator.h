@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "SpatialHash.h"
 
 struct VoxelNode;
 struct Voxel;
@@ -13,6 +14,7 @@ public:
 	void Update(float deltaTime);
 	static bool TestCollision(Voxel& lhs, Voxel& rhs);
 private:
+	SpatialHash m_spatialHash;
 	std::vector<Voxel>& m_particleRef;
 	float m_accumulator;
 

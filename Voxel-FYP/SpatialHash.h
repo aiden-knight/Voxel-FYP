@@ -5,6 +5,7 @@
 #include <glm/gtx/hash.hpp>
 
 #include <unordered_map>
+#include <list>
 
 struct Voxel;
 
@@ -16,5 +17,5 @@ public:
 	void TestCollisions();
 
 private:
-	std::unordered_map<glm::ivec3, std::vector<Voxel*>> m_hashMap;
+	std::unordered_map<glm::ivec3, std::list<Voxel*>> m_hashMap;
 };

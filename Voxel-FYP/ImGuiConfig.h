@@ -7,6 +7,7 @@
 
 struct ImGuiConfig
 {
+	bool resetSimulator = false;
 	bool simulate = false;
 	float timeScale = 1.0f;
 
