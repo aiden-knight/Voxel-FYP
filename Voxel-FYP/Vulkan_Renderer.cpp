@@ -292,6 +292,7 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 		vBufferMemory = vertexBuffer.MapMemory();
 	}
 	device->GetHandle().waitIdle();
+	config->resetSimulator = true;
 }
 
 void Vulkan_Renderer::CreateFrameData(DevicePtr device)
@@ -364,6 +365,12 @@ void Vulkan_Renderer::DrawImGui()
 
 		ImGui::Checkbox("Simulate", &config->simulate);
 		ImGui::DragFloat("Time Scale", &config->timeScale, 0.1f);
+
+		if (ImGui::Button("Explode"))
+		{
+			config->explode = true;
+		}
+		ImGui::DragFloat("Explosion Strength", &config->explosionStrength, 0.5f, 0.0f, std::numeric_limits<float>::max());
 
 		if (ImGui::CollapsingHeader("Camera Params"))
 		{

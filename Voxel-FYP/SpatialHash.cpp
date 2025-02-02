@@ -29,15 +29,34 @@ void SpatialHash::Clear()
 	m_hashMap.clear();
 }
 
-void SpatialHash::Insert(Voxel* node)
+void SpatialHash::Insert(VoxelNode* node)
 {
-	glm::ivec3 pos{};
-	for (int i = 0; i < 3; ++i)
+	m_hashMap[GetPos(node)].push_back(node);
+}
+
+struct ListUpdate
+{
+	std::list<Voxel*>::iterator it;
+	std::list<Voxel*>* old;
+	glm::ivec3 newPosition;
+};
+
+void SpatialHash::Update()
+{
+	for (auto& [pos, vec] : m_hashMap)
 	{
-		pos[i] = static_cast<int>(floor(node->position[i] / (2 * node->position.w)));
+		for (auto it = vec.begin(); it != vec.end();)
+		{
+			auto jt = it;
+			++it;
+
+			glm::ivec3 currPos = GetPos(*jt);
+			if (currPos != pos)
+			{
+				m_hashMap[currPos].splice(m_hashMap[currPos].begin(), vec, jt);
+			}
+		}
 	}
-	
-	m_hashMap[pos].push_back(node);
 }
 
 void SpatialHash::TestCollisions()
@@ -62,4 +81,14 @@ void SpatialHash::TestCollisions()
 			}
 		}
 	}
+}
+
+glm::ivec3 SpatialHash::GetPos(VoxelNode* node)
+{
+	glm::ivec3 pos{};
+	for (int i = 0; i < 3; ++i)
+	{
+		pos[i] = static_cast<int>(floor(node->voxel->position[i] / (2 * node->voxel->position.w)));
+	}
+	return pos;
 }
