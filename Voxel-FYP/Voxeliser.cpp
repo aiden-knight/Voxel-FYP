@@ -100,7 +100,7 @@ Voxeliser::Voxeliser(DevicePtr device, CommandPoolPtr transferPool, Vulkan_Buffe
 	std::vector<vk::DescriptorBufferInfo> particleBuffer{ {{
 		particlesOut->GetHandle(),
 		0,
-		sizeof(Particle) * voxelisationInfo.voxelResolution * voxelisationInfo.voxelResolution * voxelisationInfo.voxelResolution
+		sizeof(Voxel) * voxelisationInfo.voxelResolution * voxelisationInfo.voxelResolution * voxelisationInfo.voxelResolution
 	}} };
 
 	std::vector<vk::WriteDescriptorSet> computeDescriptorWrites{ {

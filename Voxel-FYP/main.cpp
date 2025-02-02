@@ -26,7 +26,7 @@ int main()
 		Vulkan_Wrapper vulkanWrapper{ window.get(), true };
 
 		RendererPtr renderer = vulkanWrapper.GetRenderer();
-		Simulator simulator{ renderer->GetParticleVector() };
+		Simulator simulator{ renderer->GetVoxelisation() };
 
 		while (!window->ShouldClose()) 
 		{
@@ -34,17 +34,7 @@ int main()
 
 			simulator.Update(GetDeltaTime());
 
-			try
-			{
-				renderer->DrawFrame();
-			}
-			catch (std::exception& ex)
-			{
-				std::cout << ex.what() << std::endl;
-				vulkanWrapper.RecreateSwapChain();
-				if (window->resized)
-					window->resized = false;
-			}
+			renderer->DrawFrame();
 		}
 	}
 	return 0;

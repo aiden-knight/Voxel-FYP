@@ -8,7 +8,7 @@
 #include "Mesh.h"
 
 class Vulkan_Wrapper;
-struct Particle;
+struct Voxel;
 
 class Vulkan_Renderer
 {
@@ -18,7 +18,7 @@ public:
 	~Vulkan_Renderer();
 
 	void DrawFrame();
-	std::vector<Particle>& GetParticleVector() { return m_voxelisation; }
+	std::vector<VoxelNode>& GetVoxelisation() { return m_voxelisation; }
 private:
 	using Buffer = std::unique_ptr<Vulkan_Buffer>;
 
@@ -47,7 +47,8 @@ private:
 	std::unique_ptr<Vulkan_Model> m_model;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
 
-	std::vector<Particle> m_voxelisation;
+	std::vector<VoxelNode> m_voxelisation;
+	std::vector<Voxel> m_voxels;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_vertexBuffers;
 
 	void RecordCommandBuffer(uint32_t imageIndex);

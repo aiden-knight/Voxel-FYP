@@ -3,7 +3,11 @@
 #include "Structures.h"
 #include <cmath>
 
-Simulator::Simulator(std::vector<Particle>& particles) :
+#include "Octree.h"
+
+Octree octree{ glm::vec3(0), glm::vec3(3.0f), 4 };
+
+Simulator::Simulator(std::vector<VoxelNode>& particles) :
 	m_particleRef{particles}
 {
 	m_accumulator = 0;
@@ -23,13 +27,15 @@ void Simulator::Update(float deltaTime)
 		return;
 
 	deltaTime = 0.016f;
-
+	
 	ImGuiConfig* config = ImGuiConfig::GetInstance();
 	if (!config->simulate) return;
 
+	octree.ClearLists();
+
 	for (size_t i = 0; i < m_particleRef.size(); ++i)
 	{
-		auto& particle = m_particleRef[i];
+		auto& particle = *m_particleRef[i].data;
 
 		particle.position += particle.velocity * deltaTime * config->timeScale;
 		particle.velocity.y += (-1 * deltaTime * config->timeScale);
@@ -37,17 +43,16 @@ void Simulator::Update(float deltaTime)
 		if (particle.position.y <= -2.0f)
 		{
 			particle.velocity.y *= -1;
-			particle.position.y = -2.0f;
+			particle.position.y = -1.9f;
 		}
 		
-		for (size_t j = i + 1; j < m_particleRef.size(); ++j)
-		{
-			if(TestCollision(particle, m_particleRef[j])) break;
-		}
+		octree.Insert(&m_particleRef[i]);
 	}
+
+	octree.TestCollisions();
 }
 
-bool Simulator::TestCollision(Particle& lhs, Particle& rhs)
+bool Simulator::TestCollision(Voxel& lhs, Voxel& rhs)
 {
 	auto [penDepth, axis] = TestAABBs(lhs, rhs);
 	if (axis == -1) return false;
@@ -74,7 +79,7 @@ bool Simulator::TestCollision(Particle& lhs, Particle& rhs)
 	return true;
 }
 
-std::pair<float, int> Simulator::TestAABBs(const Particle& lhs, const Particle& rhs)
+std::pair<float, int> Simulator::TestAABBs(const Voxel& lhs, const Voxel& rhs)
 {
 	float voxelHalfExtent = lhs.position.w;
 	std::pair<float, int> result = { std::numeric_limits<float>::max(), -1 };

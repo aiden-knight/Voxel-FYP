@@ -1,20 +1,21 @@
 #pragma once
 #include <vector>
 
-struct Particle;
+struct VoxelNode;
+struct Voxel;
 
 class Simulator
 {
 public:
-	Simulator(std::vector<Particle>& particles);
+	Simulator(std::vector<VoxelNode>& particles);
 	~Simulator();
 
 	void Update(float deltaTime);
+	static bool TestCollision(Voxel& lhs, Voxel& rhs);
 private:
-	std::vector<Particle>& m_particleRef;
+	std::vector<VoxelNode>& m_particleRef;
 	float m_accumulator;
 
-	static bool TestCollision(Particle& lhs, Particle& rhs);
-	static std::pair<float, int> TestAABBs(const Particle& lhs, const Particle& rhs);
+	static std::pair<float, int> TestAABBs(const Voxel& lhs, const Voxel& rhs);
 };
 

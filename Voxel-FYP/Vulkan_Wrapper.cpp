@@ -78,6 +78,7 @@ void Vulkan_Wrapper::RecreateSwapChain()
 
 	m_swapChain->CreateFramebuffers(m_device, m_renderPass, m_depthImage);
 	m_swapChain->CreateImGuiFramebuffers(m_device, m_imGuiRenderPass);
+	m_window->resized = false;
 }
 
 void Vulkan_Wrapper::InitialiseGraphics()

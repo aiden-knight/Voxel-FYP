@@ -46,6 +46,12 @@ Vulkan_Renderer::~Vulkan_Renderer()
 
 void Vulkan_Renderer::DrawFrame() 
 {
+	if (m_owner->GetWindow()->resized)
+	{
+		m_owner->RecreateSwapChain();
+		return;
+	}
+
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -53,17 +59,13 @@ void Vulkan_Renderer::DrawFrame()
 	DrawImGui();
 
 	ImGui::Render();
-	
+
 	// graphics pipeline pass
 	std::array<vk::Fence, 1> fences{ m_inFlightFence[m_currentFrame] };
 	{ auto discard = m_deviceRef->GetHandle().waitForFences(fences, vk::True, UINT64_MAX); }
 
 	std::pair<vk::Result, uint32_t> ret = m_swapChainRef->GetHandle().acquireNextImage(UINT64_MAX, m_imageAvailableSemaphore[m_currentFrame]);
-	if (ret.first == vk::Result::eErrorOutOfDateKHR) {
-		m_owner->RecreateSwapChain();
-		return;
-	}
-	else if (ret.first != vk::Result::eSuccess && ret.first != vk::Result::eSuboptimalKHR) {
+	if (ret.first != vk::Result::eSuccess && ret.first != vk::Result::eSuboptimalKHR) {
 		throw std::runtime_error("failed to acquire swapchain image");
 	}
 	
@@ -97,8 +99,7 @@ void Vulkan_Renderer::DrawFrame()
 	vk::Result result = m_deviceRef->GetQueue(PRESENT).presentKHR(presentInfo);
 	
 	// check if swapchain needs updating
-	if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_owner->GetWindow()->resized) {
-		m_owner->GetWindow()->resized = false;
+	if (result == vk::Result::eSuboptimalKHR || m_owner->GetWindow()->resized) {
 		m_owner->RecreateSwapChain();
 	} else if (result != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to present swap chain image");
@@ -141,7 +142,7 @@ void Vulkan_Renderer::RecordCommandBuffer(uint32_t imageIndex)
 	std::array<vk::Buffer, 1> vertexBuffers{ m_vertexBuffers[m_currentFrame].first.GetHandle()};
 	std::array<vk::DeviceSize, 1> offsets{ 0 };
 	m_commandBuffers[m_currentFrame].bindVertexBuffers(0, vertexBuffers, offsets);
-	m_commandBuffers[m_currentFrame].draw(m_voxelisation.size(), 1, 0, 0);
+	m_commandBuffers[m_currentFrame].draw(m_voxels.size(), 1, 0, 0);
 
 	m_commandBuffers[m_currentFrame].endRenderPass();
 	m_commandBuffers[m_currentFrame].end();
@@ -213,6 +214,7 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 	// clear previous data
 	m_vertexBuffers.clear();
 	m_voxelisation.clear();
+	m_voxels.clear();
 
 	// load the mesh and centre it around the world centre for voxelisation
 	m_mesh = ObjectLoader::LoadMesh("models\\" + config->modelString + ".obj");
@@ -223,7 +225,7 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 
 	// get the size of the entire voxel grid
 	size_t voxelCount = config->modelResolution * config->modelResolution * config->modelResolution;
-	vk::DeviceSize bufferSize = sizeof(Particle) * voxelCount;
+	vk::DeviceSize bufferSize = sizeof(Voxel) * voxelCount;
 
 	// create buffer to store the voxelisation in
 	Vulkan_Buffer voxelisationBuffer = Vulkan_Buffer(device, bufferSize,
@@ -249,7 +251,7 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 		Vulkan_Buffer buffer{ device, bufferSize, vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
 		buffer.CopyFromBuffer(graphicsPool, voxelisationBuffer, bufferSize);
 		device->GetHandle().waitIdle();
-		Particle* voxelisation = static_cast<Particle*>(buffer.MapMemory());
+		Voxel* voxelisation = static_cast<Voxel*>(buffer.MapMemory());
 
 		// fill a vector with the buffer info that has a voxel value
 		auto before = std::chrono::high_resolution_clock::now();
@@ -257,7 +259,7 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 		{
 			if (voxelisation->position.w >= 1.0f)
 			{
-				auto& particle = m_voxelisation.emplace_back(std::move(*voxelisation));
+				auto& particle = m_voxels.emplace_back(std::move(*voxelisation));
 				particle.position.w = m_voxelHalfExtent;
 			}
 			++voxelisation;
@@ -268,6 +270,10 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 		std::cout << "Filling voxelisation vector took: " << vectorTime << " seconds" << std::endl;
 	}
 
+	m_voxelisation.reserve(m_voxels.size());
+	for (auto& voxel : m_voxels)
+		m_voxelisation.emplace_back(VoxelNode{ &voxel, nullptr });
+
 	auto after = std::chrono::high_resolution_clock::now();
 	float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(after - before).count();
 
@@ -276,12 +282,12 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 
 
 	// create the buffers for each frame 
-	bufferSize = m_voxelisation.size() * sizeof(Particle);
+	bufferSize = m_voxels.size() * sizeof(Voxel);
 
 	Vulkan_Buffer buffer{ device, bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent };
 
-	buffer.FillBuffer(m_voxelisation.data());
+	buffer.FillBuffer(m_voxels.data());
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
 		auto& [vertexBuffer, vBufferMemory] = m_vertexBuffers.emplace_back(Vulkan_Buffer(device, bufferSize,
@@ -350,7 +356,7 @@ void Vulkan_Renderer::UpdateUniforms(uint32_t imageIndex)
 
 void Vulkan_Renderer::UpdateVertexBuffer(uint32_t currentFrame)
 {
-	std::memcpy(m_vertexBuffers[currentFrame].second, m_voxelisation.data(), m_voxelisation.size() * sizeof(Particle));
+	std::memcpy(m_vertexBuffers[currentFrame].second, m_voxels.data(), m_voxels.size() * sizeof(Voxel));
 }
 
 void Vulkan_Renderer::DrawImGui()

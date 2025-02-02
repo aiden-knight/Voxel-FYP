@@ -36,7 +36,7 @@ struct Vertex
 	}
 };
 
-struct Particle
+struct Voxel
 {
 	glm::vec4 position;
 	glm::vec4 velocity;
@@ -44,7 +44,7 @@ struct Particle
 
 	static std::array<vk::VertexInputBindingDescription, 1> GetBindingDescription() {
 		vk::VertexInputBindingDescription bindingDesc{
-			0, sizeof(Particle), vk::VertexInputRate::eVertex
+			0, sizeof(Voxel), vk::VertexInputRate::eVertex
 		};
 
 		return { bindingDesc };
@@ -53,12 +53,18 @@ struct Particle
 	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions() {
 		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions{ {
 				//	Location	Binding		Format aka how many bytes			Offset from vertex start
-				{	0,			0,			vk::Format::eR32G32B32A32Sfloat,	offsetof(Particle, position) },
-				{	1,			0,			vk::Format::eR32G32B32A32Sfloat,	offsetof(Particle, colour) }
+				{	0,			0,			vk::Format::eR32G32B32A32Sfloat,	offsetof(Voxel, position) },
+				{	1,			0,			vk::Format::eR32G32B32A32Sfloat,	offsetof(Voxel, colour) }
 			} };
 
 		return attributeDescriptions;
 	}
+};
+
+struct VoxelNode
+{
+	Voxel* data;
+	VoxelNode* pNext;
 };
 
 // Used for number of framebuffers etc
