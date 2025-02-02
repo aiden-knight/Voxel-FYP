@@ -213,7 +213,6 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 
 	// clear previous data
 	m_vertexBuffers.clear();
-	m_voxelisation.clear();
 	m_voxels.clear();
 
 	// load the mesh and centre it around the world centre for voxelisation
@@ -269,10 +268,6 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 
 		std::cout << "Filling voxelisation vector took: " << vectorTime << " seconds" << std::endl;
 	}
-
-	m_voxelisation.reserve(m_voxels.size());
-	for (auto& voxel : m_voxels)
-		m_voxelisation.emplace_back(VoxelNode{ &voxel, nullptr });
 
 	auto after = std::chrono::high_resolution_clock::now();
 	float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(after - before).count();
@@ -363,6 +358,7 @@ void Vulkan_Renderer::DrawImGui()
 {
 	ImGuiConfig* config = ImGuiConfig::GetInstance();
 	auto& io = ImGui::GetIO();
+
 	{
 		ImGui::Begin("Voxel FYP");
 

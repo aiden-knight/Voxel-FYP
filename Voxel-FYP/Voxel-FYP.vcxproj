@@ -149,9 +149,8 @@
     <ClCompile Include="..\includes\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="ImGuiConfig.cpp" />
     <ClCompile Include="ObjectLoader.cpp" />
-    <ClCompile Include="Octree.cpp" />
     <ClCompile Include="Simulator.cpp" />
-    <ClCompile Include="SpatialPartition.cpp" />
+    <ClCompile Include="SpatialHash.cpp" />
     <ClCompile Include="Voxeliser.cpp" />
     <ClCompile Include="Vulkan_Buffer.cpp" />
     <ClCompile Include="Vulkan_CommandPool.cpp" />
@@ -175,9 +174,8 @@
     <ClInclude Include="ImGuiConfig.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjectLoader.h" />
-    <ClInclude Include="Octree.h" />
     <ClInclude Include="Simulator.h" />
-    <ClInclude Include="SpatialPartition.h" />
+    <ClInclude Include="SpatialHash.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Voxeliser.h" />
     <ClInclude Include="Vulkan_Buffer.h" />

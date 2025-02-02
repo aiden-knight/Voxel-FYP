@@ -3,11 +3,11 @@
 #include "Structures.h"
 #include <cmath>
 
-#include "Octree.h"
+#include "SpatialHash.h"
 
-Octree octree{ glm::vec3(0), glm::vec3(3.0f), 4 };
+SpatialHash spatialHash;
 
-Simulator::Simulator(std::vector<VoxelNode>& particles) :
+Simulator::Simulator(std::vector<Voxel>& particles) :
 	m_particleRef{particles}
 {
 	m_accumulator = 0;
@@ -31,11 +31,11 @@ void Simulator::Update(float deltaTime)
 	ImGuiConfig* config = ImGuiConfig::GetInstance();
 	if (!config->simulate) return;
 
-	octree.ClearLists();
+	spatialHash.Clear();
 
 	for (size_t i = 0; i < m_particleRef.size(); ++i)
 	{
-		auto& particle = *m_particleRef[i].data;
+		auto& particle = m_particleRef[i];
 
 		particle.position += particle.velocity * deltaTime * config->timeScale;
 		particle.velocity.y += (-1 * deltaTime * config->timeScale);
@@ -46,10 +46,10 @@ void Simulator::Update(float deltaTime)
 			particle.position.y = -1.9f;
 		}
 		
-		octree.Insert(&m_particleRef[i]);
+		spatialHash.Insert(&m_particleRef[i]);
 	}
 
-	octree.TestCollisions();
+	spatialHash.TestCollisions();
 }
 
 bool Simulator::TestCollision(Voxel& lhs, Voxel& rhs)

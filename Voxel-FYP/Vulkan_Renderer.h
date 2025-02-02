@@ -18,7 +18,7 @@ public:
 	~Vulkan_Renderer();
 
 	void DrawFrame();
-	std::vector<VoxelNode>& GetVoxelisation() { return m_voxelisation; }
+	std::vector<Voxel>& GetVoxelisation() { return m_voxels; }
 private:
 	using Buffer = std::unique_ptr<Vulkan_Buffer>;
 
@@ -47,7 +47,6 @@ private:
 	std::unique_ptr<Vulkan_Model> m_model;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_uniformBuffers;
 
-	std::vector<VoxelNode> m_voxelisation;
 	std::vector<Voxel> m_voxels;
 	std::vector<std::pair<Vulkan_Buffer, void*>> m_vertexBuffers;
 
