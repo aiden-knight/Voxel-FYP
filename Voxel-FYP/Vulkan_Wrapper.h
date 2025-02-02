@@ -38,9 +38,6 @@ private:
 	std::unique_ptr<Vulkan_DescriptorSets> m_descriptorSets;
 	std::unique_ptr<Vulkan_Pipeline> m_pipeline;
 
-	std::unique_ptr<Vulkan_DescriptorSets> m_computeDescriptors;
-	std::unique_ptr<Vulkan_Pipeline> m_computePipeline;
-
 	vk::DescriptorPool m_imGuiDescriptorPool;
 	std::unique_ptr<Vulkan_RenderPass> m_imGuiRenderPass;
 
@@ -49,7 +46,6 @@ private:
 
 	GLFW_Window* m_window;
 
-	void InitialiseCompute();
 	void InitialiseGraphics();
 	void InitialiseImGUI();
 };

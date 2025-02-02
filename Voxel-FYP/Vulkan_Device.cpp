@@ -156,8 +156,6 @@ vk::raii::PhysicalDevice Vulkan_Device::ChoosePhysicalDevice(const std::unique_p
 		m_swapChainSupportDetails.presentModes = device.getSurfacePresentModesKHR(surface->GetHandle());
 		if (m_swapChainSupportDetails.formats.empty() || m_swapChainSupportDetails.presentModes.empty()) continue;
 
-		std::cout << device.getProperties().limits.maxComputeWorkGroupCount[0] << std::endl;
-
 		// if device suitable return it
 		return availableDevices[index];
 	}

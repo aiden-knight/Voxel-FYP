@@ -100,7 +100,7 @@ void main() {
 
 	Particle particle;
 	particle.position = vec4(position, 0.0);
-	particle.velocity = particle.position;
+	particle.velocity = vec4(0.0);
 
 	particle.colour = normalize(particle.position);
 	particle.colour += 1;

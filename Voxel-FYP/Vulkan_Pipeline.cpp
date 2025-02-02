@@ -53,8 +53,8 @@ vk::raii::Pipeline Vulkan_Pipeline::CreateGraphicsPipeline(DevicePtr device, Ren
         }
     } };
 
-    auto bindingDesc = Particle::GetBindingDescription();
-    auto attributeDesc = Particle::GetAttributeDescriptions();
+    auto bindingDesc = Voxel::GetBindingDescription();
+    auto attributeDesc = Voxel::GetAttributeDescriptions();
 
     vk::PipelineVertexInputStateCreateInfo vertextInputInfo = { {}, bindingDesc, attributeDesc};
 

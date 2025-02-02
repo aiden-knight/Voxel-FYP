@@ -2,8 +2,20 @@
 #include "GLFW_Wrapper.h"
 #include "GLFW_Window.h"
 #include "Vulkan_Renderer.h"
+#include "Simulator.h"
 
 #include <iostream>
+#include <chrono>
+
+float GetDeltaTime()
+{
+	static auto lastTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+
+	float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
+	lastTime = currentTime;
+	return deltaTime;
+}
 
 int main()
 {
@@ -20,22 +32,15 @@ int main()
 		Vulkan_Wrapper vulkanWrapper{ window.get(), validationEnabled };
 
 		RendererPtr renderer = vulkanWrapper.GetRenderer();
+		Simulator simulator{ renderer->GetVoxelisation() };
 
 		while (!window->ShouldClose()) 
 		{
 			window->PollEvents();
 
-			try
-			{
-				renderer->DrawFrame();
-			}
-			catch (std::exception& ex)
-			{
-				std::cout << ex.what() << std::endl;
-				vulkanWrapper.RecreateSwapChain();
-				if (window->resized)
-					window->resized = false;
-			}
+			simulator.Update(GetDeltaTime());
+
+			renderer->DrawFrame();
 		}
 	}
 	return 0;

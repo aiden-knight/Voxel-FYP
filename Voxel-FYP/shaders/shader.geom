@@ -10,16 +10,9 @@ layout(location = 0) out vec4 FragColourOut;
 layout (binding = 0) uniform ParameterUBO {
 	mat4 view;
 	mat4 proj;
-	uint particleCount;
 	float halfExtent;
-	float velocityMult;
-	float deltaTime;
 } ubo;
 
-vec2 diff = vec2(0.25, 0.33) * 2;
-uint particleCount = 4096;
-
-vec3 extent = vec3(0.05, 0.05, 0.05);
 vec3 vertices[] = {
 	vec3(-ubo.halfExtent, -ubo.halfExtent, -ubo.halfExtent), // 0 {- - -}
 	vec3(-ubo.halfExtent,  ubo.halfExtent, -ubo.halfExtent), // 1 {- + -}
@@ -35,9 +28,6 @@ void EmitVertexWithOffset(uint index, vec3 colourMult);
 void EmitPrimitive(uint a, uint b, uint c, vec3 colourMult);
 
 void main() {
-	if(gl_in[0].gl_Position.w < 1.0)
-		return;	
-
 	// TOP
 	EmitPrimitive(5, 1, 3, vec3(1, 1, 1));
 	EmitPrimitive(7, 5, 3, vec3(1, 1, 1));

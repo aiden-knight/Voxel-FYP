@@ -31,9 +31,6 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	// graphics pipeline objects
 	InitialiseGraphics();
 
-	// compute pipeline objects
-	InitialiseCompute();
-
 	// command pool for rendering commands
 	m_graphicsPool.reset(new Vulkan_CommandPool(m_device, GRAPHICS));
 
@@ -41,7 +38,7 @@ Vulkan_Wrapper::Vulkan_Wrapper(GLFW_Window* window, bool validationEnabled) :
 	InitialiseImGUI();
 
 	// renderer
-	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_imGuiRenderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets, m_computePipeline, m_computeDescriptors));
+	m_renderer.reset(new Vulkan_Renderer(this, m_device, m_renderPass, m_imGuiRenderPass, m_swapChain, m_pipeline, m_graphicsPool, m_descriptorSets));
 }
 
 Vulkan_Wrapper::~Vulkan_Wrapper()
@@ -82,32 +79,7 @@ void Vulkan_Wrapper::RecreateSwapChain()
 
 	m_swapChain->CreateFramebuffers(m_device, m_renderPass, m_depthImage);
 	m_swapChain->CreateImGuiFramebuffers(m_device, m_imGuiRenderPass);
-}
-
-void Vulkan_Wrapper::InitialiseCompute()
-{
-	std::vector<vk::DescriptorSetLayoutBinding> computeDescriptors{ {
-		{
-			0, // binding
-			vk::DescriptorType::eUniformBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eCompute
-		},
-		{
-			1, // binding
-			vk::DescriptorType::eStorageBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eCompute
-		},
-		{
-			2, // binding
-			vk::DescriptorType::eStorageBuffer,
-			1, // descripter count
-			vk::ShaderStageFlagBits::eCompute
-		}
-	} };
-	m_computeDescriptors.reset(new Vulkan_DescriptorSets(m_device, computeDescriptors, MAX_FRAMES_IN_FLIGHT));
-	m_computePipeline.reset(new Vulkan_Pipeline(m_device, m_computeDescriptors, "shaders/shader.comp.spv"));
+	m_window->resized = false;
 }
 
 void Vulkan_Wrapper::InitialiseGraphics()
@@ -121,7 +93,7 @@ void Vulkan_Wrapper::InitialiseGraphics()
 			0, // binding
 			vk::DescriptorType::eUniformBuffer,
 			1, // descripter count
-			vk::ShaderStageFlagBits::eGeometry | vk::ShaderStageFlagBits::eVertex
+			vk::ShaderStageFlagBits::eGeometry
 		}
 	} };
 	m_descriptorSets.reset(new Vulkan_DescriptorSets(m_device, graphicsDescriptors, MAX_FRAMES_IN_FLIGHT));

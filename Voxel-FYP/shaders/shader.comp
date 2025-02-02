@@ -15,6 +15,9 @@ layout (binding = 0) uniform ParameterUBO {
 	float deltaTime;
 } ubo;
 
+uint totalCount = ubo.particleCount * ubo.particleCount * ubo.particleCount;
+float edge = ubo.halfExtent * ubo.particleCount;
+
 layout(std140, binding = 1) readonly buffer ParticleSSBOIn {
 	Particle particlesIn[ ];
 };
@@ -25,11 +28,31 @@ layout(std140, binding = 2) buffer ParticleSSBOOut {
 
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
+bool TestAABBs(vec4 lhs, vec4 rhs) {
+	if(lhs.x + ubo.halfExtent < rhs.x - ubo.halfExtent || lhs.x - ubo.halfExtent > rhs.x + ubo.halfExtent) return false;
+	if(lhs.y + ubo.halfExtent < rhs.y - ubo.halfExtent || lhs.y - ubo.halfExtent > rhs.y + ubo.halfExtent) return false;
+	if(lhs.z + ubo.halfExtent < rhs.z - ubo.halfExtent || lhs.z - ubo.halfExtent > rhs.z + ubo.halfExtent) return false;
+
+	return true;
+}
+
 void main() {
 	uint index = gl_GlobalInvocationID.x;
-	if(index >= ubo.particleCount) return;
+	if(index >= totalCount) return;
 
 	Particle particleIn = particlesIn[index];
 
 	particlesOut[index].position = particleIn.position + particleIn.velocity * ubo.deltaTime * ubo.velocityMult;
+	particlesOut[index].velocity.y = particleIn.velocity.y - (1 * ubo.deltaTime * ubo.velocityMult);
+
+	if(particlesOut[index].position.y <= -edge)
+	{
+		particlesOut[index].position.y = -edge;
+		particlesOut[index].velocity.y *= -1.0;
+	}
+	else if(particlesOut[index].position.y >= edge)
+	{
+		particlesOut[index].position.y = edge;
+		particlesOut[index].velocity.y *= -1.0;
+	}
 }
