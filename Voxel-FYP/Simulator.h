@@ -8,7 +8,7 @@ struct Voxel;
 struct SimulatedVoxel
 {
 	glm::vec4 position;
-	glm::vec4 force;
+	//glm::vec4 force; can't implement yet due to complexity
 	glm::vec4 velocity;
 };
 
