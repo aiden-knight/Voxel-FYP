@@ -16,6 +16,7 @@ struct Constraint
 {
 	SimulatedVoxel* first;
 	SimulatedVoxel* second;
+	glm::vec4 axis;
 };
 
 class Simulator
@@ -36,8 +37,7 @@ private:
 
 	void ResetSimulator();
 	void UpdateConstraints();
-	void Explode(float strength);
-	void PropegateExplosion(glm::vec4 source, float strength);
+	void Explode(const float range, const float strength);
 
 	static std::pair<float, int> TestAABBs(const SimulatedVoxel& lhs, const SimulatedVoxel& rhs);
 };

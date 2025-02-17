@@ -10,7 +10,9 @@ struct ImGuiConfig
 	bool resetSimulator = false;
 	bool simulate = false;
 	bool explode = false;
-	float explosionStrength = 1.0f;
+	float explosionRange = 1.0f;
+	float explosionForce = 1.0f;
+	float breakingPoint = 5.0f;
 	float timeScale = 1.0f;
 
 	glm::vec3 cameraPos = glm::vec3(0.0f, 3.5f, 7.0f);

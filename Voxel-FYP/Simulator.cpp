@@ -4,6 +4,9 @@
 #include <cmath>
 #include <random>
 
+constexpr float wallPos = 8.0f;
+constexpr float floorPos = -2.0f;
+
 consteval std::array<glm::ivec3, 26> CreateOffsets()
 {
 	std::array<glm::ivec3, 26> offsets;
@@ -60,7 +63,7 @@ void Simulator::ResetSimulator()
 			glm::ivec3 offPos = pos + offsets[j];
 			if (voxelMap.contains(offPos))
 			{
-				m_constraints.emplace_back(&voxel, voxelMap[offPos]);
+				m_constraints.emplace_back(&voxel, voxelMap[offPos], glm::vec4(offsets[j], 0.0f) * m_voxelHalfExtent);
 			}
 		}
 	}
@@ -68,32 +71,71 @@ void Simulator::ResetSimulator()
 
 void Simulator::UpdateConstraints()
 {
-	
+	for (auto it = m_constraints.begin(); it != m_constraints.end();)
+	{
+		auto& constraint = *it;
+
+		glm::vec4 velocityDiff = constraint.second->velocity - constraint.first->velocity;
+		float magnitude = glm::length(velocityDiff);
+		if (magnitude > ImGuiConfig::GetInstance()->breakingPoint)
+		{
+			it = m_constraints.erase(it);
+		}
+		else
+		{
+			glm::vec4 diff = constraint.second->position - constraint.first->position;
+
+			glm::vec4 halfAxis = constraint.axis;
+			glm::vec4 halfDiff = diff / 2.0f;
+
+			glm::vec4 firstTarget = constraint.first->position + halfDiff - halfAxis;
+			glm::vec4 secondTarget = constraint.second->position - halfDiff + halfAxis;
+
+			constraint.first->position = firstTarget;
+			constraint.second->position = secondTarget;
+
+			glm::vec4 avgVelocity = (constraint.first->velocity + constraint.second->velocity) / 2.0f;
+			constraint.first->velocity = avgVelocity;
+			constraint.second->velocity = avgVelocity;
+			++it;
+		}
+	}
 }
 
-void Simulator::Explode(float strength)
+void Simulator::Explode(const float range, const float strength)
 {
 	static std::random_device rand{};
 	static std::mt19937_64 engine{ rand() };
-	std::uniform_int_distribution<int> distribution{ 0, static_cast<int>(m_voxelRef.size() - 1)};
+	std::uniform_int_distribution<int> distribution{ 0, static_cast<int>(m_voxels.size() - 1)};
 
 	int index = distribution(engine);
 
+	const glm::vec4 source = m_voxels[index].position;
+	float rangeSqr = range * range;
+	for (auto& voxel : m_voxels)
+	{
+		if (voxel.position != source)
+		{
+			glm::vec4 diff = voxel.position - source;
+			float sqrMagnitude = glm::dot(diff, diff);
+			if (sqrMagnitude > rangeSqr)
+				continue;
 
-	Voxel& source = m_voxelRef[index];
+			float force = strength / sqrMagnitude;
+			voxel.velocity += glm::normalize(diff) * force;
+		}
+	}
 
-	PropegateExplosion(source.position, strength);
+	UpdateConstraints();
 }
 
-void Simulator::PropegateExplosion(glm::vec4 source, float strength)
-{
-}
-
-constexpr float wallPos = 8.0f;
 
 void Simulator::Update(float deltaTime)
 {
-	m_accumulator += deltaTime;
+	if (deltaTime < 0.016f)
+		m_accumulator += deltaTime;
+	else
+		m_accumulator += 0.016f;
 
 	if (m_accumulator > 0.016f)
 		m_accumulator -= 0.016f;
@@ -114,7 +156,7 @@ void Simulator::Update(float deltaTime)
 	if (config->explode)
 	{
 		config->explode = false;
-		Explode(config->explosionStrength);
+		Explode(config->explosionRange, config->explosionForce);
 	}
 
 	m_spatialHash.Clear();
@@ -124,12 +166,12 @@ void Simulator::Update(float deltaTime)
 		voxel.position += voxel.velocity * deltaTime * config->timeScale;
 		voxel.velocity.y += (-1 * deltaTime * config->timeScale);
 
-		float deprec = 0.3f;
+		const float deprec = 0.3f;
 
-		if (voxel.position.y <= -2.0f)
+		if (voxel.position.y <= floorPos)
 		{
 			voxel.velocity.y = abs(voxel.velocity.y) * deprec;
-			voxel.position.y = -1.9f;
+			voxel.position.y = floorPos;
 		}
 
 		if (voxel.position.x <= -wallPos)
@@ -153,7 +195,12 @@ void Simulator::Update(float deltaTime)
 			voxel.velocity.z = abs(voxel.velocity.z) * -deprec;
 			voxel.position.z = wallPos;
 		}
-		
+	}
+
+	UpdateConstraints();
+
+	for (auto& voxel : m_voxels)
+	{
 		m_spatialHash.Insert(&voxel);
 	}
 

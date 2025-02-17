@@ -365,12 +365,14 @@ void Vulkan_Renderer::DrawImGui()
 
 		ImGui::Checkbox("Simulate", &config->simulate);
 		ImGui::DragFloat("Time Scale", &config->timeScale, 0.1f);
+		ImGui::DragFloat("Breaking Point", &config->breakingPoint, 0.1f);
 
 		if (ImGui::Button("Explode"))
 		{
 			config->explode = true;
 		}
-		ImGui::DragFloat("Explosion Strength", &config->explosionStrength, 0.5f, 0.0f, std::numeric_limits<float>::max());
+		ImGui::DragFloat("Explosion Force", &config->explosionForce, 0.01f);
+		ImGui::DragFloat("Explosion Range", &config->explosionRange, 0.01f, 0.0f, std::numeric_limits<float>::max());
 
 		if (ImGui::CollapsingHeader("Camera Params"))
 		{
