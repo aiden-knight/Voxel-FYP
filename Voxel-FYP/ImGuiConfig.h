@@ -5,8 +5,20 @@
 
 #include <string>
 
+struct ProfileInfo
+{
+	int dataCount = 0;
+	size_t voxelCount = 0;
+	int resolution = 0;
+	bool wasSimulated = false;
+	std::string model = "";
+};
+
 struct ImGuiConfig
 {
+	bool profile = false;
+	ProfileInfo profileInfo{};
+
 	bool resetSimulator = false;
 	bool simulate = false;
 	bool explode = false;

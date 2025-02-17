@@ -395,6 +395,47 @@ void Vulkan_Renderer::DrawImGui()
 			}
 		}
 
+		if (ImGui::CollapsingHeader("Profiling Params"))
+		{
+			ImGui::Separator();
+			ImGui::Text("On Start:");
+			static bool enableSim = false;
+			ImGui::Checkbox("Enable simulation", &enableSim);
+
+			static bool reloadModel = false;
+			ImGui::Checkbox("Reload Model", &reloadModel);
+
+			ImGui::Separator();
+			ImGui::Text("Other:");
+			static int dataCount = 1000;
+			ImGui::DragInt("Data Count", &dataCount, 1, 0, std::numeric_limits<int>::max());
+
+			ImGui::Separator();
+			if (config->profile)
+			{
+				ImGui::Text("Currently profiling: true");
+			}
+			else
+			{
+				ImGui::Text("Currently profiling: false");
+			}
+
+			if (ImGui::Button("Begin Profiling") && !config->profile)
+			{
+				if (reloadModel)
+				{
+					m_deviceRef->GetHandle().waitIdle();
+					CreateVoxelisationBuffers(m_deviceRef, m_graphicsPoolRef);
+				}
+
+				if (enableSim)
+					config->simulate = true;
+
+				config->profileInfo = ProfileInfo(dataCount, m_voxels.size(), config->modelResolution, config->simulate, config->modelString);
+				config->profile = true;
+			}
+		}
+
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
 		ImGui::End();
