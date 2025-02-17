@@ -1,40 +1,44 @@
 #pragma once
 #include <vector>
+#include <list>
 #include "SpatialHash.h"
 
 struct Voxel;
 
-struct VoxelNode
+struct SimulatedVoxel
 {
-	Voxel* voxel;
-	std::vector<VoxelNode*> constraints;
-	bool updated;
-	unsigned int voxelCount = 0;
+	glm::vec4 position;
+	glm::vec4 force;
+	glm::vec4 velocity;
+};
+
+struct Constraint
+{
+	SimulatedVoxel* first;
+	SimulatedVoxel* second;
 };
 
 class Simulator
 {
 public:
-	Simulator(std::vector<Voxel>& particles);
+	Simulator(std::vector<Voxel>& voxels);
 	~Simulator();
 
 	void Update(float deltaTime);
-	static bool TestCollision(VoxelNode& lhs, VoxelNode& rhs);
+	static bool TestCollision(SimulatedVoxel& lhs, SimulatedVoxel& rhs);
 private:
 	SpatialHash m_spatialHash;
-	std::vector<Voxel>& m_particleRef;
-	std::vector<VoxelNode> m_voxels;
+	std::vector<Voxel>& m_voxelRef;
+	std::vector<SimulatedVoxel> m_voxels;
+	std::list<Constraint> m_constraints;
 	float m_accumulator;
 	float m_voxelHalfExtent;
 
 	void ResetSimulator();
-	void UpdateConstraints(VoxelNode& voxelNode);
-	size_t GetCount(VoxelNode& voxelNode, size_t current);
-	void PropegateCount(VoxelNode& voxelNode);
+	void UpdateConstraints();
 	void Explode(float strength);
-	void PropegateExplosion(glm::vec4 source, VoxelNode& voxelNode, float strength);
+	void PropegateExplosion(glm::vec4 source, float strength);
 
-	void GetAllCounts();
-	static std::pair<float, int> TestAABBs(const VoxelNode& lhs, const VoxelNode& rhs);
+	static std::pair<float, int> TestAABBs(const SimulatedVoxel& lhs, const SimulatedVoxel& rhs);
 };
 

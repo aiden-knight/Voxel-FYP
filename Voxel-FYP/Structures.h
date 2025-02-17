@@ -39,7 +39,6 @@ struct Vertex
 struct Voxel
 {
 	glm::vec4 position;
-	glm::vec4 velocity;
 	glm::vec4 colour;
 
 	static std::array<vk::VertexInputBindingDescription, 1> GetBindingDescription() {

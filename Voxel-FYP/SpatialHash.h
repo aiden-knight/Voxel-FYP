@@ -7,18 +7,18 @@
 #include <unordered_map>
 #include <list>
 
-struct VoxelNode;
+struct SimulatedVoxel;
 
 class SpatialHash
 {
 public:
 	void Clear();
-	void Insert(VoxelNode* node);
+	void Insert(SimulatedVoxel* voxel);
 	void Update();
 	void TestCollisions();
 
-	glm::ivec3 GetPos(VoxelNode* node);
+	glm::ivec3 GetPos(const SimulatedVoxel* voxel) const;
 private:
-	std::unordered_map<glm::ivec3, std::list<VoxelNode*>> m_hashMap;
+	std::unordered_map<glm::ivec3, std::list<SimulatedVoxel*>> m_hashMap;
 
 };

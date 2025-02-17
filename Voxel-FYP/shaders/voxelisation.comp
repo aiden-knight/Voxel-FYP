@@ -5,9 +5,8 @@ struct Vertex {
 	vec3 normal;
 };
 
-struct Particle {
+struct QueryPoint {
 	vec4 position;
-	vec4 velocity;
 	vec4 colour;
 };
 
@@ -31,8 +30,8 @@ layout(std140, binding = 2) readonly buffer IndicesIn {
 	Triangle indices[ ];
 };
 
-layout(std140, binding = 3) buffer ParticleSSBOOut {
-	Particle particlesOut[ ];
+layout(std140, binding = 3) buffer QueryPointSSBOOut {
+	QueryPoint queryPointsOut[ ];
 };
 
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
@@ -98,18 +97,17 @@ void main() {
 		occupancy += ATAN2(alpha, beta);
 	}
 
-	Particle particle;
-	particle.position = vec4(position, 0.0);
-	particle.velocity = vec4(0.0);
+	QueryPoint queryPoint;
+	queryPoint.position = vec4(position, 0.0);
 
-	particle.colour = normalize(particle.position);
-	particle.colour += 1;
-	particle.colour /= 2;
-	if (dot(particle.colour, particle.colour) < 0.1)
-		particle.colour = vec4(0.3);
+	queryPoint.colour = normalize(queryPoint.position);
+	queryPoint.colour += 1;
+	queryPoint.colour /= 2;
+	if (dot(queryPoint.colour, queryPoint.colour) < 0.1)
+		queryPoint.colour = vec4(0.3);
 	
-	particle.colour.w = 1.0;
+	queryPoint.colour.w = 1.0;
 
-	particle.position.w = occupancy;
-	particlesOut[index] = particle;
+	queryPoint.position.w = occupancy;
+	queryPointsOut[index] = queryPoint;
 }

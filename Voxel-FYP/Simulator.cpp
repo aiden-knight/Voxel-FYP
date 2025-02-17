@@ -26,8 +26,8 @@ consteval std::array<glm::ivec3, 26> CreateOffsets()
 
 constexpr std::array<glm::ivec3, 26> offsets = CreateOffsets();
 
-Simulator::Simulator(std::vector<Voxel>& particles) :
-	m_particleRef{particles}
+Simulator::Simulator(std::vector<Voxel>& voxels) :
+	m_voxelRef{ voxels }
 {
 	m_accumulator = 0;
 }
@@ -38,119 +38,55 @@ Simulator::~Simulator()
 
 void Simulator::ResetSimulator()
 {
+	m_constraints.clear();
 	m_voxels.clear();
-	m_voxels.reserve(m_particleRef.size());
-	std::unordered_map<glm::ivec3, VoxelNode*> voxelNodeMap;
+	std::unordered_map<glm::ivec3, SimulatedVoxel*> voxelMap;
 
-	m_voxelHalfExtent = m_particleRef.front().position.w;
+	m_voxelHalfExtent = m_voxelRef.front().position.w;
+	m_voxels.reserve(m_voxelRef.size());
 
-	for (size_t i = 0; i < m_particleRef.size(); ++i)
+	for (const auto& voxelRef : m_voxelRef)
 	{
-		auto& voxelNode = m_voxels.emplace_back(VoxelNode(&m_particleRef[i], {}, false));
-		voxelNode.constraints.resize(26, nullptr);
+		m_voxels.emplace_back(voxelRef.position);
 	}
 
-	for (size_t i = 0; i < m_voxels.size(); ++i)
+	for (auto& voxel : m_voxels)
 	{
-		auto& voxelNode = m_voxels[i];
-		glm::ivec3 pos = m_spatialHash.GetPos(&voxelNode);
-		voxelNodeMap[pos] = &voxelNode;
+		glm::ivec3 pos = m_spatialHash.GetPos(&voxel);
+		voxelMap[pos] = &voxel;
 
 		for (size_t j = 0; j < offsets.size(); ++j)
 		{
 			glm::ivec3 offPos = pos + offsets[j];
-			if (voxelNodeMap.contains(offPos))
+			if (voxelMap.contains(offPos))
 			{
-				VoxelNode* otherNode = voxelNodeMap[offPos];
-				voxelNode.constraints[j] = otherNode;
-				otherNode->constraints[25 - j] = &voxelNode;
+				m_constraints.emplace_back(&voxel, voxelMap[offPos]);
 			}
-		}	
-	}
-
-	GetAllCounts();
-}
-
-void Simulator::UpdateConstraints(VoxelNode& voxelNode)
-{
-	auto& particle = *voxelNode.voxel;
-
-	for (size_t j = 0; j < offsets.size(); ++j)
-	{
-		if (voxelNode.constraints[j] == nullptr || voxelNode.constraints[j]->updated)  continue;
-
-		glm::vec4 toAdd{ static_cast<glm::vec3>(offsets[j]) * 2.0f * m_voxelHalfExtent , 0.0f };
-		voxelNode.constraints[j]->voxel->position = particle.position + toAdd;
-		voxelNode.constraints[j]->voxel->velocity = particle.velocity;
-		voxelNode.constraints[j]->updated = true;
-		UpdateConstraints(*voxelNode.constraints[j]);
+		}
 	}
 }
 
-size_t Simulator::GetCount(VoxelNode& voxelNode, size_t current)
+void Simulator::UpdateConstraints()
 {
-	for (size_t j = 0; j < offsets.size(); ++j)
-	{
-		if (voxelNode.constraints[j] == nullptr || voxelNode.constraints[j]->updated)  continue;
-
-		voxelNode.constraints[j]->updated = true;
-		current = GetCount(*voxelNode.constraints[j], current + 1);
-	}
-	return current;
-}
-
-void Simulator::PropegateCount(VoxelNode& voxelNode)
-{
-	for (size_t j = 0; j < offsets.size(); ++j)
-	{
-		if (voxelNode.constraints[j] == nullptr || voxelNode.constraints[j]->updated)  continue;
-
-		voxelNode.constraints[j]->voxelCount = voxelNode.voxelCount;
-		voxelNode.constraints[j]->updated = true;
-		PropegateCount(*voxelNode.constraints[j]);
-	}
+	
 }
 
 void Simulator::Explode(float strength)
 {
 	static std::random_device rand{};
 	static std::mt19937_64 engine{ rand() };
-	std::uniform_int_distribution<int> distribution{ 0, static_cast<int>(m_voxels.size() - 1)};
+	std::uniform_int_distribution<int> distribution{ 0, static_cast<int>(m_voxelRef.size() - 1)};
 
 	int index = distribution(engine);
 
-	for (auto& voxelNode : m_voxels)
-		voxelNode.updated = false;
 
-	VoxelNode& source = m_voxels[index];
-	source.updated = true;
+	Voxel& source = m_voxelRef[index];
 
-	PropegateExplosion(source.voxel->position, source, strength);
+	PropegateExplosion(source.position, strength);
 }
 
-void Simulator::PropegateExplosion(glm::vec4 source, VoxelNode& voxelNode, float strength)
+void Simulator::PropegateExplosion(glm::vec4 source, float strength)
 {
-	for (size_t j = 0; j < offsets.size(); ++j)
-	{
-		if (voxelNode.constraints[j] == nullptr)  continue;
-
-		VoxelNode& other = *voxelNode.constraints[j];
-		glm::vec4 diff = other.voxel->position - source;
-		float distance = glm::length(diff) * 2;
-		if (strength > distance)
-		{
-			voxelNode.constraints[j] = nullptr;
-			other.constraints[25 - j] = nullptr;
-			if (!other.updated)
-			{
-				other.updated = true;
-				PropegateExplosion(source, other, strength);
-			}
-		}
-
-		glm::vec4 dir = diff / distance;
-		other.voxel->velocity += dir * (((1/distance) * strength)/5);
-	}
 }
 
 constexpr float wallPos = 8.0f;
@@ -164,9 +100,11 @@ void Simulator::Update(float deltaTime)
 	else
 		return;
 
+	ImGuiConfig* config = ImGuiConfig::GetInstance();
+	if (!config->simulate) return;
+
 	deltaTime = 0.016f;
 	
-	ImGuiConfig* config = ImGuiConfig::GetInstance();
 	if (config->resetSimulator)
 	{
 		config->resetSimulator = false;
@@ -179,67 +117,60 @@ void Simulator::Update(float deltaTime)
 		Explode(config->explosionStrength);
 	}
 
-	if (!config->simulate) return;
-
 	m_spatialHash.Clear();
 
-	for (auto& voxelNode : m_voxels)
-		voxelNode.updated = false;
-
-	for (auto& voxelNode : m_voxels)
+	for (auto& voxel : m_voxels)
 	{
-		if (!voxelNode.updated)
+		voxel.position += voxel.velocity * deltaTime * config->timeScale;
+		voxel.velocity.y += (-1 * deltaTime * config->timeScale);
+
+		float deprec = 0.3f;
+
+		if (voxel.position.y <= -2.0f)
 		{
-			auto& particle = *voxelNode.voxel;
+			voxel.velocity.y = abs(voxel.velocity.y) * deprec;
+			voxel.position.y = -1.9f;
+		}
 
-			particle.position += particle.velocity * deltaTime * config->timeScale;
-			particle.velocity.y += (-1 * deltaTime * config->timeScale);
+		if (voxel.position.x <= -wallPos)
+		{
+			voxel.velocity.x = abs(voxel.velocity.x) * deprec;
+			voxel.position.x = -wallPos;
+		}
+		if (voxel.position.x >= wallPos)
+		{
+			voxel.velocity.x = abs(voxel.velocity.x) * -deprec;
+			voxel.position.x = wallPos;
+		}
 
-			float deprec = 0.3f;
-
-			if (particle.position.y <= -2.0f)
-			{
-				particle.velocity.y = abs(particle.velocity.y) * deprec;
-				particle.position.y = -1.9f;
-			}
-
-			if (particle.position.x <= -wallPos)
-			{
-				particle.velocity.x = abs(particle.velocity.x) * deprec;
-				particle.position.x = -wallPos;
-			}
-			if (particle.position.x >= wallPos)
-			{
-				particle.velocity.x = abs(particle.velocity.x) * -deprec;
-				particle.position.x = wallPos;
-			}
-
-			if (particle.position.z <= -wallPos)
-			{
-				particle.velocity.z = abs(particle.velocity.z) * deprec;
-				particle.position.z = -wallPos;
-			}
-			if (particle.position.z >= wallPos)
-			{
-				particle.velocity.z = abs(particle.velocity.z) * -deprec;
-				particle.position.z = wallPos;
-			}
-
-			UpdateConstraints(voxelNode);
+		if (voxel.position.z <= -wallPos)
+		{
+			voxel.velocity.z = abs(voxel.velocity.z) * deprec;
+			voxel.position.z = -wallPos;
+		}
+		if (voxel.position.z >= wallPos)
+		{
+			voxel.velocity.z = abs(voxel.velocity.z) * -deprec;
+			voxel.position.z = wallPos;
 		}
 		
-		m_spatialHash.Insert(&voxelNode);
+		m_spatialHash.Insert(&voxel);
 	}
 
 	m_spatialHash.TestCollisions();
+
+	for (size_t index = 0; index < m_voxelRef.size(); ++index)
+	{
+		m_voxelRef[index].position = m_voxels[index].position;
+	}
 }
 
-bool Simulator::TestCollision(VoxelNode& lhs, VoxelNode& rhs)
+bool Simulator::TestCollision(SimulatedVoxel& lhs, SimulatedVoxel& rhs)
 {
 	auto [penDepth, axis] = TestAABBs(lhs, rhs);
 	if (axis == -1) return false;
 
-	glm::vec4 relativeVelocity = lhs.voxel->velocity - rhs.voxel->velocity;
+	glm::vec4 relativeVelocity = lhs.velocity - rhs.velocity;
 
 	int mult = penDepth < 0 ? -1 : 1;
 	penDepth *= mult;
@@ -249,58 +180,34 @@ bool Simulator::TestCollision(VoxelNode& lhs, VoxelNode& rhs)
 	float dotProd = glm::dot(collisionNormal, relativeVelocity);
 	if (dotProd <= 0.0f) return false;
 
-	float invMassLhs = 1.0f / lhs.voxelCount;
-	float invMassRhs = 1.0f / rhs.voxelCount;
+	float invMassLhs = 1.0f;
+	float invMassRhs = 1.0f;
 	float invMassSum = invMassLhs + invMassRhs;
 
-	lhs.voxel->position += collisionNormal * penDepth * (invMassLhs / invMassSum);
-	rhs.voxel->position -= collisionNormal * penDepth * (invMassRhs / invMassSum);
+	lhs.position += collisionNormal * penDepth * (invMassLhs / invMassSum);
+	rhs.position -= collisionNormal * penDepth * (invMassRhs / invMassSum);
 
 	float restitution = 0.5f;
 	float vj = -(1.0f + restitution) * dotProd;
-	float energy = vj / 2.0f;
+	float energy = vj / invMassSum;
 
-	lhs.voxel->velocity += invMassLhs * energy * collisionNormal;
-	rhs.voxel->velocity -= invMassRhs * energy * collisionNormal;
+	lhs.velocity += invMassLhs * energy * collisionNormal;
+	rhs.velocity -= invMassRhs * energy * collisionNormal;
 	return true;
 }
 
-void Simulator::GetAllCounts()
+std::pair<float, int> Simulator::TestAABBs(const SimulatedVoxel& lhs, const SimulatedVoxel& rhs)
 {
-	for (auto& voxelNode : m_voxels)
-		voxelNode.updated = false;
-
-	for (auto& voxelNode : m_voxels)
-	{
-		if (voxelNode.updated) continue;
-
-		voxelNode.updated = true;
-		voxelNode.voxelCount = GetCount(voxelNode, 1);
-	}
-
-	for (auto& voxelNode : m_voxels)
-		voxelNode.updated = false;
-
-	for (auto& voxelNode : m_voxels)
-	{
-		if (voxelNode.updated) continue;
-
-		PropegateCount(voxelNode);
-	}
-}
-
-std::pair<float, int> Simulator::TestAABBs(const VoxelNode& lhs, const VoxelNode& rhs)
-{
-	float voxelHalfExtent = lhs.voxel->position.w;
+	float voxelHalfExtent = lhs.position.w;
 	std::pair<float, int> result = { std::numeric_limits<float>::max(), -1 };
 
 	int multi = 1;
 	for (int i = 0; i < 3; i++)
 	{
-		float lhsMin = lhs.voxel->position[i] - voxelHalfExtent;
-		float lhsMax = lhs.voxel->position[i] + voxelHalfExtent;
-		float rhsMin = rhs.voxel->position[i] - voxelHalfExtent;
-		float rhsMax = rhs.voxel->position[i] + voxelHalfExtent;
+		float lhsMin = lhs.position[i] - voxelHalfExtent;
+		float lhsMax = lhs.position[i] + voxelHalfExtent;
+		float rhsMin = rhs.position[i] - voxelHalfExtent;
+		float rhsMax = rhs.position[i] + voxelHalfExtent;
 
 		if (rhsMax - lhsMin < result.first)
 		{
