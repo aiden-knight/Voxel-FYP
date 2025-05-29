@@ -54,6 +54,7 @@ private:
 	void RecordImGuiCommandBuffer(uint32_t imageIndex);
 
 	void CentreMesh(Mesh& mesh);
+	bool HasEmptyVoxelAdjacent(Voxel* querySpace, const size_t voxelIndex, const int modelResolution);
 
 	void CreateUniformBuffer(DevicePtr device);
 	void CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr graphicsPool);

@@ -195,6 +195,36 @@ void Vulkan_Renderer::CentreMesh(Mesh& mesh)
 	}
 }
 
+bool Vulkan_Renderer::HasEmptyVoxelAdjacent(Voxel* querySpace, const size_t voxelIndex, const int modelResolution)
+{
+	const size_t max = modelResolution * modelResolution * modelResolution;
+	const size_t xStep = modelResolution * modelResolution;
+	const size_t yStep = modelResolution;
+	const size_t zStep = 1;
+
+	const size_t xyzPart = voxelIndex;
+	const size_t yzPart = (voxelIndex % xStep);
+	const size_t zPart = (voxelIndex % yStep);
+
+	if (xyzPart < xStep || xyzPart >= max - xStep) return true;
+	if (yzPart < yStep || yzPart >= xStep - yStep) return true;
+	if (zPart < zStep || zPart >= yStep - zStep) return true;
+
+	for (int x = -1; x <= 1; ++x)
+	{
+		for (int y = -1; y <= 1; ++y)
+		{
+			for (int z = -1; z <= 1; ++z)
+			{
+				const size_t neighbourIndex = voxelIndex + (x * xStep) + (y * yStep) + (z * zStep);
+				if (querySpace[neighbourIndex].position.w < 1.0f) return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void Vulkan_Renderer::CreateUniformBuffer(DevicePtr device)
 {
 	vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -254,14 +284,15 @@ void Vulkan_Renderer::CreateVoxelisationBuffers(DevicePtr device, CommandPoolPtr
 
 		// fill a vector with the buffer info that has a voxel value
 		auto before = std::chrono::high_resolution_clock::now();
+
 		for (size_t i = 0; i < voxelCount; ++i)
 		{
-			if (voxelisation->position.w >= 1.0f)
-			{
-				auto& particle = m_voxels.emplace_back(std::move(*voxelisation));
-				particle.position.w = m_voxelHalfExtent;
-			}
-			++voxelisation;
+			// if empty or is hollow and no empty voxel's adjacent
+			if (voxelisation[i].position.w < 1.0f) continue;
+			if (config->hollow && !HasEmptyVoxelAdjacent(voxelisation, i, config->modelResolution)) continue;
+
+			auto& particle = m_voxels.emplace_back(voxelisation[i]);
+			particle.position.w = m_voxelHalfExtent;
 		}
 		auto after = std::chrono::high_resolution_clock::now();
 		vectorTime = std::chrono::duration<float, std::chrono::seconds::period>(after - before).count();
@@ -387,6 +418,7 @@ void Vulkan_Renderer::DrawImGui()
 			ImGui::InputText("Model", &config->modelString);
 			ImGui::DragFloat("Target Half Extent", &config->modelHalfExtent, 0.1f, 0.0f, std::numeric_limits<float>::max());
 			ImGui::DragInt("Resolution", &config->modelResolution, 1.0f, 0, std::numeric_limits<int>::max());
+			ImGui::Checkbox("Hollow Model", &config->hollow);
 
 			if (ImGui::Button("Load New Model"))
 			{

@@ -30,6 +30,7 @@ struct ImGuiConfig
 	glm::vec3 cameraPos = glm::vec3(0.0f, 3.5f, 7.0f);
 	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 
+	bool hollow = false;
 	std::string modelString = "teapot";
 	float modelHalfExtent = 2;
 	int modelResolution = 32;
